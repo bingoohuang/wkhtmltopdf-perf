@@ -4,11 +4,9 @@ import (
 	"bufio"
 	"context"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -64,7 +62,7 @@ var v2Pool = NewV2Pool()
 
 func (p *ToX) ToPdfV2(htmlURL, extraArgs string) (pdf []byte, err error) {
 	var out string
-	if out, err = createTemp(); err != nil {
+	if out, err = CreateTempFile(); err != nil {
 		return
 	}
 	defer os.Remove(out)
@@ -92,15 +90,6 @@ func (p *ToX) ToPdfV2(htmlURL, extraArgs string) (pdf []byte, err error) {
 	return nil, err
 }
 
-func createTemp() (string, error) {
-	dir, err := ioutil.TempDir("", "")
-	if err != nil {
-		return "", err
-	}
-	out := filepath.Join(dir, NewUUID().String())
-	return out, nil
-}
-
 type V2Item struct {
 	In, Out    chan string
 	cmd        *exec.Cmd
@@ -109,7 +98,7 @@ type V2Item struct {
 }
 
 func (i *V2Item) Send(input string, okTerm, errTerm string) (string, error) {
-	clearOut(i.Out)
+	ClearChan(i.Out)
 	i.In <- input
 
 	out := ""
@@ -136,16 +125,6 @@ func (i *V2Item) Send(input string, okTerm, errTerm string) (string, error) {
 func (i *V2Item) Kill() interface{} {
 	i.StdoutPipe.Close()
 	return i.cmd.Process.Kill()
-}
-
-func clearOut(out chan string) {
-	for {
-		select {
-		case <-out:
-		default:
-			return
-		}
-	}
 }
 
 func (o ExecOptions) NewV2Item(name string, args ...string) (inOut *V2Item, err error) {

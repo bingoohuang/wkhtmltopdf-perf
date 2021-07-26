@@ -1,11 +1,11 @@
-package wkp
+package fsnotify
 
 import (
 	"github.com/fsnotify/fsnotify"
 	"log"
 )
 
-func GoFsNotify(path string) error {
+func Listen(path string) error {
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err

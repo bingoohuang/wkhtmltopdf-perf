@@ -1,4 +1,4 @@
-package wkhtml
+package uuid
 
 import (
 	"crypto/rand"
@@ -6,8 +6,8 @@ import (
 	"io"
 )
 
-// NewUUID creates a new random UUID or panics.
-func NewUUID() UUID {
+// New creates a new random UUID or panics.
+func New() UUID {
 	return MustNewUUID(NewRandomUUID())
 }
 

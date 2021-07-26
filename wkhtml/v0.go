@@ -9,7 +9,7 @@ import (
 
 func (p *ToX) ToPdfV0(htmlURL, extraArgs string) (pdf []byte, err error) {
 	var out string
-	if out, err = createTemp(); err != nil {
+	if out, err = CreateTempFile(); err != nil {
 		return
 	}
 	defer os.Remove(out)

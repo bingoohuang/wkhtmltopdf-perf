@@ -1,4 +1,4 @@
-package wkp
+package fsnotify
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -6,7 +6,7 @@ import (
 )
 
 func TestGoFsNotify(t *testing.T) {
-	err := GoFsNotify(".")
+	err := Listen(".")
 	assert.Nil(t, err)
 
 	//select {}

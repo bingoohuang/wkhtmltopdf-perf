@@ -28,9 +28,8 @@ func main() {
 }
 
 func toPdf(w http.ResponseWriter, r *http.Request) error {
-	htmlURL := r.URL.Query().Get("url")
-	extra := r.URL.Query().Get("extra")
-	if len(htmlURL) == 0 {
+	url := r.URL.Query().Get("url")
+	if len(url) == 0 {
 		return errors.New("no html found")
 	}
 
@@ -48,7 +47,8 @@ func toPdf(w http.ResponseWriter, r *http.Request) error {
 		toPdf = wk.ToPdfV2
 	}
 
-	pdf, err := toPdf(htmlURL, extra)
+	extra := r.URL.Query().Get("extra")
+	pdf, err := toPdf(url, extra)
 	if err != nil {
 		return err
 	}
