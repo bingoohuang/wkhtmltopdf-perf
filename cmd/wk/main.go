@@ -38,6 +38,8 @@ func toPdf(w http.ResponseWriter, r *http.Request) error {
 	toPdf := wk.ToPdf
 
 	switch v := r.URL.Query().Get("v"); v {
+	case "1p":
+		toPdf = wk.ToPdfV1p
 	case "1":
 		toPdf = wk.ToPdfV1
 	case "2":
