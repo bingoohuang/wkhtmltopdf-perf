@@ -22,7 +22,9 @@ func main() {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
-	panic(http.ListenAndServe(":9337", nil))
+	addr := ":9337"
+	fmt.Println("listening on ", addr)
+	panic(http.ListenAndServe(addr, nil))
 }
 
 func toPdf(w http.ResponseWriter, r *http.Request) error {
@@ -33,13 +35,19 @@ func toPdf(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	wk := &wkhtml.ToX{}
-	pdf, err := wk.ToPDFByURL(htmlURL, extra)
+	toPdf := wk.ToPDFByURL
+
+	switch v := r.URL.Query().Get("v"); v {
+	case "2":
+		toPdf = wk.ToPDFStdinArgs
+	}
+
+	pdf, err := toPdf(htmlURL, extra)
 	if err != nil {
 		return err
 	}
 
 	fn := time.Now().Format(`20060102150405000`) + ".pdf"
-
 	if r.URL.Query().Get("dl") != "" {
 		cd := mime.FormatMediaType("attachment", map[string]string{"filename": fn})
 		w.Header().Set("Content-Disposition", cd)
