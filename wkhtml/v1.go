@@ -1,12 +1,13 @@
 package wkhtml
 
 import (
+	"github.com/bingoohuang/wkp/pkg/util"
 	"log"
 	"time"
 )
 
 func (p *ToX) ToPdfV1(url, extraArgs string) (pdf []byte, err error) {
-	data, err := GetContent(url)
+	data, err := util.GetContent(url)
 	if err != nil {
 		return nil, err
 	}

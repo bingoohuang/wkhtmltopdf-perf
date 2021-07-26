@@ -3,6 +3,7 @@ package wkhtml
 import (
 	"bufio"
 	"context"
+	"github.com/bingoohuang/wkp/pkg/util"
 	"io"
 	"log"
 	"os"
@@ -64,7 +65,7 @@ var v2Once sync.Once
 
 func (p *ToX) ToPdfV2(htmlURL, extraArgs string) (pdf []byte, err error) {
 	var out string
-	if out, err = CreateTempFile(); err != nil {
+	if out, err = util.TempFile(".pdf"); err != nil {
 		return
 	}
 	defer os.Remove(out)
@@ -102,7 +103,7 @@ type V2Item struct {
 }
 
 func (i *V2Item) Send(input string, okTerm, errTerm string) (string, error) {
-	ClearChan(i.Out)
+	util.ClearChan(i.Out)
 	i.In <- input
 
 	out := ""

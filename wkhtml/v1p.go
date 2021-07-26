@@ -2,6 +2,7 @@ package wkhtml
 
 import (
 	"bytes"
+	"github.com/bingoohuang/wkp/pkg/util"
 	"io"
 	"log"
 	"os/exec"
@@ -12,7 +13,7 @@ import (
 )
 
 func (p *ToX) ToPdfV1p(url, _ string) (pdf []byte, err error) {
-	data, err := GetContent(url)
+	data, err := util.GetContent(url)
 	if err != nil {
 		return nil, err
 	}

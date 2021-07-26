@@ -45,6 +45,8 @@ func toPdf(w http.ResponseWriter, r *http.Request) error {
 		toPdf = wk.ToPdfV1
 	case "2":
 		toPdf = wk.ToPdfV2
+	case "2p":
+		toPdf = wk.ToPdfV2p
 	}
 
 	extra := r.URL.Query().Get("extra")

@@ -1,6 +1,7 @@
 package wkhtml
 
 import (
+	"github.com/bingoohuang/wkp/pkg/util"
 	"log"
 	"os"
 	"strconv"
@@ -9,7 +10,7 @@ import (
 
 func (p *ToX) ToPdfV0(htmlURL, extraArgs string) (pdf []byte, err error) {
 	var out string
-	if out, err = CreateTempFile(); err != nil {
+	if out, err = util.TempFile(".pdf"); err != nil {
 		return
 	}
 	defer os.Remove(out)

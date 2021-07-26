@@ -1,4 +1,4 @@
-package wkhtml
+package util
 
 import (
 	"fmt"
@@ -32,11 +32,15 @@ func ClearChan(out chan string) {
 	}
 }
 
-func CreateTempFile() (string, error) {
+func TempDir() (string, error) {
+	return ioutil.TempDir("", "")
+}
+
+func TempFile(ext string) (string, error) {
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return "", err
 	}
-	out := filepath.Join(dir, uuid.New().String())
+	out := filepath.Join(dir, uuid.New().String()+ext)
 	return out, nil
 }
