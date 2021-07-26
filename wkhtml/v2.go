@@ -2,32 +2,113 @@ package wkhtml
 
 import (
 	"bufio"
-	"bytes"
 	"context"
-	"errors"
 	"io"
+	"io/ioutil"
 	"log"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
 )
 
-type ExecOptions struct {
-	Timeout time.Duration
+type V2Pool struct {
+	ch1, chn chan *V2Item
 }
 
-var ErrTimeout = errors.New("execute timeout")
-var ErrExecute = errors.New("execute error")
+func NewV2Pool() *V2Pool {
+	options := ExecOptions{Timeout: 10 * time.Second}
+	p := &V2Pool{}
+	p.ch1 = make(chan *V2Item)
+	p.chn = make(chan *V2Item, runtime.NumCPU()*2)
+	go func() {
+		for {
+			wk, err := options.NewV2Item(wkhtmltopdf, "--read-args-from-stdin")
+			if err != nil {
+				time.Sleep(10 * time.Second)
+				continue
+			}
+			p.ch1 <- wk
+		}
+	}()
 
-type InOut struct {
+	return p
+}
+
+func (p *V2Pool) borrow() *V2Item {
+	select {
+	case wk := <-p.chn:
+		return wk
+	default:
+		return <-p.ch1
+	}
+}
+
+func (p *V2Pool) back(wk *V2Item) {
+	select {
+	case p.chn <- wk:
+		return
+	default:
+		if err := wk.Kill(); err != nil {
+			log.Printf("failed to kill, error: %v", err)
+		}
+		return
+	}
+}
+
+var v2Pool = NewV2Pool()
+
+func (p *ToX) ToPdfV2(htmlURL, extraArgs string) (pdf []byte, err error) {
+	var out string
+	if out, err = createTemp(); err != nil {
+		return
+	}
+	defer os.Remove(out)
+
+	in := strconv.Quote(htmlURL) + " " + out + "\n"
+	if extraArgs != "" {
+		in = extraArgs + " " + in
+	}
+
+	wk := v2Pool.borrow()
+	result, err := wk.Send(in, "Done", "Error:")
+	log.Printf("wk result: %s", result)
+	if err == ErrTimeout {
+		if err := wk.Kill(); err != nil {
+			log.Printf("failed to kill, error: %v", err)
+		}
+	} else {
+		v2Pool.back(wk)
+	}
+
+	if err == nil {
+		return os.ReadFile(out)
+	}
+
+	return nil, err
+}
+
+func createTemp() (string, error) {
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return "", err
+	}
+	out := filepath.Join(dir, NewUUID().String())
+	return out, nil
+}
+
+type V2Item struct {
 	In, Out    chan string
 	cmd        *exec.Cmd
 	Timeout    time.Duration
 	StdoutPipe io.ReadCloser
 }
 
-func (i *InOut) Send(input string, okTerm, errTerm string) (string, error) {
+func (i *V2Item) Send(input string, okTerm, errTerm string) (string, error) {
 	clearOut(i.Out)
 	i.In <- input
 
@@ -52,7 +133,7 @@ func (i *InOut) Send(input string, okTerm, errTerm string) (string, error) {
 	}
 }
 
-func (i *InOut) Kill() interface{} {
+func (i *V2Item) Kill() interface{} {
 	i.StdoutPipe.Close()
 	return i.cmd.Process.Kill()
 }
@@ -67,8 +148,8 @@ func clearOut(out chan string) {
 	}
 }
 
-func (o ExecOptions) NewPrepare(name string, args ...string) (inOut *InOut, err error) {
-	inOut = &InOut{In: make(chan string), Out: make(chan string), Timeout: o.Timeout}
+func (o ExecOptions) NewV2Item(name string, args ...string) (inOut *V2Item, err error) {
+	inOut = &V2Item{In: make(chan string), Out: make(chan string), Timeout: o.Timeout}
 	cmd := exec.Command(name, args...)
 	inOut.cmd = cmd
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true, Pgid: 0}
@@ -117,61 +198,4 @@ func (o ExecOptions) NewPrepare(name string, args ...string) (inOut *InOut, err 
 	}
 
 	return inOut, nil
-}
-
-func (o ExecOptions) Exec(data []byte, name string, args ...string) (result []byte, err error) {
-	cmd := exec.Command(name, args...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true, Pgid: 0}
-
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return
-	}
-
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return
-	}
-
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return
-	}
-
-	outBuf := bytes.NewBuffer(nil)
-	errBuf := bytes.NewBuffer(nil)
-	if err = cmd.Start(); err != nil {
-		return
-	}
-
-	if _, err = io.Copy(stdin, bytes.NewBuffer(data)); err != nil {
-		return
-	}
-
-	stdin.Close()
-
-	go io.Copy(outBuf, stdout)
-	go io.Copy(errBuf, stderr)
-
-	ch := make(chan error)
-	go func(cmd *exec.Cmd) {
-		defer close(ch)
-		ch <- cmd.Wait()
-	}(cmd)
-
-	select {
-	case err = <-ch:
-	case <-time.After(o.Timeout):
-		cmd.Process.Kill()
-		err = ErrTimeout
-		return
-	}
-
-	if err != nil {
-		log.Printf("Error: %s", err.Error())
-		log.Printf("Stderr: %s", errBuf.String())
-		return nil, err
-	}
-
-	return outBuf.Bytes(), nil
 }
