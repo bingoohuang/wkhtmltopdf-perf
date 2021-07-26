@@ -1,6 +1,6 @@
 # wkhtmltopdf-perf
 
-performance tests for wkhtmltopdf.
+performance prof for wkhtmltopdf.
 
 [wkhtmltopdf](https://github.com/wkhtmltopdf/wkhtmltopdf) converts HTML to PDF using Webkit (QtWebKit), which is the
 browser engine that is used to render HTML and javascript - Chrome uses that engine too..
@@ -20,8 +20,7 @@ browser engine that is used to render HTML and javascript - Chrome uses that eng
 1. stdout redirect : `wkhtmltopdf -q a.html - > a.pdf`
 1. stdin/stdout: `cat a.html | wkhtmltopdf -q - - > aa.pdf`
 
-
-## 
+## read-args-from-stdin
 
 ```sh
 wkhtmltopdf --read-args-from-stdin
