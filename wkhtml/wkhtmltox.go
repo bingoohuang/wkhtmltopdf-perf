@@ -16,11 +16,12 @@ type ToX struct {
 
 const wkhtmltopdf = "wkhtmltopdf"
 
-var wkCh chan *InOut
+var wkCh1, wkChN chan *InOut
 
 func init() {
 	options := ExecOptions{Timeout: 10 * time.Second}
-	wkCh = make(chan *InOut, 10)
+	wkCh1 = make(chan *InOut, 1)
+	wkChN = make(chan *InOut, 10)
 	go func() {
 		for {
 			wk, err := options.NewPrepare(wkhtmltopdf, "--read-args-from-stdin")
@@ -28,13 +29,22 @@ func init() {
 				time.Sleep(10 * time.Second)
 				continue
 			}
-			wkCh <- wk
+			wkCh1 <- wk
 		}
 	}()
 }
 
+func getWk() *InOut {
+	select {
+	case wk := <-wkChN:
+		return wk
+	default:
+		return <-wkCh1
+	}
+}
+
 func (p *ToX) ToPDFStdinArgs(htmlURL, extraArgs string) (pdf []byte, err error) {
-	wk := <-wkCh
+	wk := getWk()
 
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -53,8 +63,12 @@ func (p *ToX) ToPDFStdinArgs(htmlURL, extraArgs string) (pdf []byte, err error) 
 		return pdf, err
 	}
 
-	if err != ErrTimeout {
-		wkCh <- wk
+	if err == ErrTimeout {
+		if err := wk.Kill(); err != nil {
+			log.Printf("failed to kill, error: %v", err)
+		}
+	} else {
+		wkChN <- wk
 	}
 	return nil, err
 }

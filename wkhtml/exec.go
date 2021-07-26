@@ -21,18 +21,24 @@ var ErrTimeout = errors.New("execute timeout")
 var ErrExecute = errors.New("execute error")
 
 type InOut struct {
-	In, Out chan string
-	cmd     *exec.Cmd
-	Timeout time.Duration
+	In, Out    chan string
+	cmd        *exec.Cmd
+	Timeout    time.Duration
+	StdoutPipe io.ReadCloser
 }
 
 func (i *InOut) Send(input string, okTerm, errTerm string) (string, error) {
+	clearOut(i.Out)
 	i.In <- input
 
 	out := ""
 	for {
 		select {
 		case line := <-i.Out:
+			if p := strings.LastIndexAny(line, "\r\n"); p > 0 {
+				line = line[p+1:]
+			}
+			line = strings.TrimSpace(line)
 			out += line
 			if strings.Contains(line, okTerm) {
 				return out, nil
@@ -41,10 +47,22 @@ func (i *InOut) Send(input string, okTerm, errTerm string) (string, error) {
 				return out, ErrExecute
 			}
 		case <-time.After(i.Timeout):
-			if err := i.cmd.Process.Kill(); err != nil {
-				log.Printf("failed to kill, error: %v", err)
-			}
 			return out, ErrTimeout
+		}
+	}
+}
+
+func (i *InOut) Kill() interface{} {
+	i.StdoutPipe.Close()
+	return i.cmd.Process.Kill()
+}
+
+func clearOut(out chan string) {
+	for {
+		select {
+		case <-out:
+		default:
+			return
 		}
 	}
 }
@@ -61,6 +79,7 @@ func (o ExecOptions) NewPrepare(name string, args ...string) (inOut *InOut, err 
 	// Make a new channel which will be used to ensure we get all output
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	go func() {
+		defer log.Printf("exiting StdinPipe loop")
 		for {
 			select {
 			case input, ok := <-inOut.In:
@@ -75,22 +94,22 @@ func (o ExecOptions) NewPrepare(name string, args ...string) (inOut *InOut, err 
 	}()
 
 	// Get a pipe to read from standard out
-	r, _ := cmd.StdoutPipe()
+	inOut.StdoutPipe, _ = cmd.StdoutPipe()
 	// Use the same pipe for standard error
 	cmd.Stderr = cmd.Stdout
 
 	// Use the scanner to scan the output line by line and log it
 	// It's running in a goroutine so that it doesn't block
 	go func() {
+		defer log.Printf("exiting StdoutPipe scanning loop")
+		defer cancelFunc()
+
 		// Create a scanner which scans r in a line-by-line fashion
 		// Read line by line and process it
-		for c := bufio.NewScanner(r); c.Scan(); {
+		for c := bufio.NewScanner(inOut.StdoutPipe); c.Scan(); {
 			line := c.Text()
 			inOut.Out <- line
-			log.Println(line)
 		}
-		// We're all done, unblock the channel
-		cancelFunc()
 	}()
 
 	if err = cmd.Start(); err != nil {
