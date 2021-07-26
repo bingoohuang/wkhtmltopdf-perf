@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 )
 
@@ -21,7 +22,7 @@ var wkCh1, wkChN chan *InOut
 func init() {
 	options := ExecOptions{Timeout: 10 * time.Second}
 	wkCh1 = make(chan *InOut, 1)
-	wkChN = make(chan *InOut, 10)
+	wkChN = make(chan *InOut, runtime.NumCPU()*2)
 	go func() {
 		for {
 			wk, err := options.NewPrepare(wkhtmltopdf, "--read-args-from-stdin")
@@ -40,6 +41,18 @@ func getWk() *InOut {
 		return wk
 	default:
 		return <-wkCh1
+	}
+}
+
+func backToPool(wk *InOut) {
+	select {
+	case wkChN <- wk:
+		return
+	default:
+		if err := wk.Kill(); err != nil {
+			log.Printf("failed to kill, error: %v", err)
+		}
+		return
 	}
 }
 
@@ -68,7 +81,7 @@ func (p *ToX) ToPDFStdinArgs(htmlURL, extraArgs string) (pdf []byte, err error) 
 			log.Printf("failed to kill, error: %v", err)
 		}
 	} else {
-		wkChN <- wk
+		backToPool(wk)
 	}
 	return nil, err
 }
