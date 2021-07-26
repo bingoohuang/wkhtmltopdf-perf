@@ -2,10 +2,8 @@ package mount
 
 import (
 	"context"
-	"github.com/bingoohuang/wkp/pkg/util"
 	"github.com/seaweedfs/fuse"
 	"github.com/seaweedfs/fuse/fs"
-	"log"
 	"os"
 	"sync"
 	"syscall"
@@ -189,18 +187,7 @@ func (f *File) Flush(ctx context.Context, req *fuse.FlushRequest) error {
 		return nil
 	}
 
-	t, err := util.TempFile(".pdf")
-	if err != nil {
-		return err
-	}
-
 	f.fr.Send(f.name, f.data)
-
-	if err := os.WriteFile(t, f.data, os.ModePerm); err != nil {
-		return err
-	}
-
-	log.Printf("write file %s to %s", f.name, t)
 
 	return nil
 }
