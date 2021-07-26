@@ -89,7 +89,7 @@ func (p *ToX) ToPDFStdinArgs(htmlURL, extraArgs string) (pdf []byte, err error) 
 }
 
 func (p *ToX) ToPDFByURL(htmlURL, extraArgs string) (pdf []byte, err error) {
-	cmd := wkhtmltopdf + " " + extraArgs + " --quiet " + strconv.Quote(htmlURL) + " -"
+	cmd := wkhtmltopdf + " " + extraArgs + " --quiet " + strconv.Quote(htmlURL) + " - | cat"
 	log.Printf("cmd: %s", cmd)
 	options := ExecOptions{Timeout: 10 * time.Second}
 	return options.Exec(nil, "sh", "-c", cmd)
