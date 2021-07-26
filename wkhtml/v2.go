@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -58,7 +59,8 @@ func (p *V2Pool) back(wk *V2Item) {
 	}
 }
 
-var v2Pool = NewV2Pool()
+var v2Pool *V2Pool
+var v2Once sync.Once
 
 func (p *ToX) ToPdfV2(htmlURL, extraArgs string) (pdf []byte, err error) {
 	var out string
@@ -71,6 +73,8 @@ func (p *ToX) ToPdfV2(htmlURL, extraArgs string) (pdf []byte, err error) {
 	if extraArgs != "" {
 		in = extraArgs + " " + in
 	}
+
+	v2Once.Do(func() { v2Pool = NewV2Pool() })
 
 	wk := v2Pool.borrow()
 	result, err := wk.Send(in, "Done", "Error:")

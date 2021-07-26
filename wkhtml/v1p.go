@@ -6,6 +6,7 @@ import (
 	"log"
 	"os/exec"
 	"runtime"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -16,11 +17,14 @@ func (p *ToX) ToPdfV1p(url, _ string) (pdf []byte, err error) {
 		return nil, err
 	}
 
+	v1pOnce.Do(func() { v1pPool = NewV1pPool() })
+
 	item := v1pPool.borrow()
 	return item.Exec(data)
 }
 
-var v1pPool = NewV1pPool()
+var v1pPool *V1pPool
+var v1pOnce sync.Once
 
 type V1pPool struct {
 	chn chan *V1pItem
