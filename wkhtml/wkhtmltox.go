@@ -3,9 +3,11 @@ package wkhtml
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -57,7 +59,7 @@ func backToPool(wk *InOut) {
 	}
 }
 
-func (p *ToX) ToPDFStdinArgs(htmlURL, extraArgs string) (pdf []byte, err error) {
+func (p *ToX) ToPdfV2(htmlURL, extraArgs string) (pdf []byte, err error) {
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return nil, err
@@ -88,11 +90,37 @@ func (p *ToX) ToPDFStdinArgs(htmlURL, extraArgs string) (pdf []byte, err error) 
 	return nil, err
 }
 
-func (p *ToX) ToPDFByURL(htmlURL, extraArgs string) (pdf []byte, err error) {
-	cmd := wkhtmltopdf + " " + extraArgs + " --quiet " + strconv.Quote(htmlURL) + " - | cat"
+func (p *ToX) ToPdf(url, extraArgs string) (pdf []byte, err error) {
+	cmd := wkhtmltopdf + " " + extraArgs + " --quiet " + strconv.Quote(url) + " - | cat"
 	log.Printf("cmd: %s", cmd)
 	options := ExecOptions{Timeout: 10 * time.Second}
 	return options.Exec(nil, "sh", "-c", cmd)
+}
+
+func (p *ToX) ToPdfV1(url, extraArgs string) (pdf []byte, err error) {
+	data, err := GetContent(url)
+	if err != nil {
+		return nil, err
+	}
+
+	cmd := wkhtmltopdf + " " + extraArgs + " --quiet " + " - - | cat"
+	log.Printf("cmd: %s", cmd)
+	options := ExecOptions{Timeout: 10 * time.Second}
+	return options.Exec(data, "sh", "-c", cmd)
+}
+
+func GetContent(url string) ([]byte, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("GET error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("status error: %v", resp.StatusCode)
+	}
+
+	return ioutil.ReadAll(resp.Body)
 }
 
 func (p *ToX) ToPDF(html []byte) (pdf []byte, err error) {

@@ -35,11 +35,13 @@ func toPdf(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	wk := &wkhtml.ToX{}
-	toPdf := wk.ToPDFByURL
+	toPdf := wk.ToPdf
 
 	switch v := r.URL.Query().Get("v"); v {
+	case "1":
+		toPdf = wk.ToPdfV1
 	case "2":
-		toPdf = wk.ToPDFStdinArgs
+		toPdf = wk.ToPdfV2
 	}
 
 	pdf, err := toPdf(htmlURL, extra)
