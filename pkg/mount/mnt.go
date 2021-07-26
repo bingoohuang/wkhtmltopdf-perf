@@ -13,8 +13,6 @@ type FS struct {
 	fr *FileRegistry
 }
 
-var _ = fs.FS(&FS{})
-
 func (f *FS) Root() (fs.Node, error) {
 	n := &Dir{
 		fr: f.fr,
@@ -81,8 +79,6 @@ type Dir struct {
 	fr *FileRegistry
 }
 
-var _ = fs.Node(&Dir{})
-
 func (d *Dir) Attr(ctx context.Context, a *fuse.Attr) error {
 	a.Mode = os.ModeDir | 0755
 	return nil
@@ -92,75 +88,27 @@ var _ = fs.NodeCreater(&Dir{})
 
 func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.CreateResponse) (fs.Node, fs.Handle, error) {
 	f := &File{
-		fr:      d.fr,
-		dir:     d,
-		name:    req.Name,
-		writers: 1,
-		// file is empty at Create time, no need to set data
+		fr:   d.fr,
+		name: req.Name,
 	}
 	return f, f, nil
 }
 
 type File struct {
 	fr   *FileRegistry
-	dir  *Dir
 	name string
-
-	mu sync.Mutex
-	// number of write-capable handles currently open
-	writers uint
-	// only valid if writers > 0
 	data []byte
 }
 
 func (f *File) Attr(ctx context.Context, a *fuse.Attr) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-
 	a.Mode = 0644
 	a.Size = uint64(len(f.data))
 	return nil
 }
 
-var _ = fs.NodeOpener(&File{})
-
-func (f *File) Open(ctx context.Context, req *fuse.OpenRequest, resp *fuse.OpenResponse) (fs.Handle, error) {
-	if req.Flags.IsReadOnly() { // we don't need to track read-only handles
-		return f, nil
-	}
-
-	f.mu.Lock()
-	defer f.mu.Unlock()
-
-	f.writers++
-	return f, nil
-}
-
-var _ = fs.HandleReleaser(&File{})
-
-func (f *File) Release(ctx context.Context, req *fuse.ReleaseRequest) error {
-	if req.Flags.IsReadOnly() { // we don't need to track read-only handles
-		return nil
-	}
-
-	f.mu.Lock()
-	defer f.mu.Unlock()
-
-	f.writers--
-	if f.writers == 0 {
-		f.data = nil
-	}
-	return nil
-}
-
-var _ = fs.HandleWriter(&File{})
-
 const maxInt = int(^uint(0) >> 1)
 
 func (f *File) Write(ctx context.Context, req *fuse.WriteRequest, resp *fuse.WriteResponse) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-
 	// expand the buffer if necessary
 	newLen := req.Offset + int64(len(req.Data))
 	if newLen > int64(maxInt) {
@@ -175,19 +123,7 @@ func (f *File) Write(ctx context.Context, req *fuse.WriteRequest, resp *fuse.Wri
 	return nil
 }
 
-var _ = fs.HandleFlusher(&File{})
-
 func (f *File) Flush(ctx context.Context, req *fuse.FlushRequest) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-
-	if f.writers == 0 {
-		// Read-only handles also get flushes. Make sure we don't
-		// overwrite valid file contents with a nil buffer.
-		return nil
-	}
-
 	f.fr.Send(f.name, f.data)
-
 	return nil
 }
