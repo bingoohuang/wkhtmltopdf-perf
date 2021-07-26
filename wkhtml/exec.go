@@ -168,6 +168,8 @@ func (o ExecOptions) Exec(data []byte, name string, args ...string) (result []by
 	}
 
 	if err != nil {
+		log.Printf("Error: %s", err.Error())
+		log.Printf("Stderr: %s", errBuf.String())
 		return nil, err
 	}
 

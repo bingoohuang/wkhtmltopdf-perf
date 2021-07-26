@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"time"
 )
 
@@ -18,7 +19,6 @@ type ToX struct {
 const wkhtmltopdf = "wkhtmltopdf"
 
 var wkCh1, wkChN chan *InOut
-var wkCh1Notify = make(chan struct{})
 
 func init() {
 	options := ExecOptions{Timeout: 10 * time.Second}
@@ -63,7 +63,7 @@ func (p *ToX) ToPDFStdinArgs(htmlURL, extraArgs string) (pdf []byte, err error) 
 		return nil, err
 	}
 	out := filepath.Join(dir, NewUUID().String())
-	in := htmlURL + " " + out + "\n"
+	in := strconv.Quote(htmlURL) + " " + out + "\n"
 	if extraArgs != "" {
 		in = extraArgs + " " + in
 	}
@@ -89,7 +89,8 @@ func (p *ToX) ToPDFStdinArgs(htmlURL, extraArgs string) (pdf []byte, err error) 
 }
 
 func (p *ToX) ToPDFByURL(htmlURL, extraArgs string) (pdf []byte, err error) {
-	cmd := wkhtmltopdf + extraArgs + " --quiet " + htmlURL + " -"
+	cmd := wkhtmltopdf + " " + extraArgs + " --quiet " + strconv.Quote(htmlURL) + " -"
+	log.Printf("cmd: %s", cmd)
 	options := ExecOptions{Timeout: 10 * time.Second}
 	return options.Exec(nil, "sh", "-c", cmd)
 }
