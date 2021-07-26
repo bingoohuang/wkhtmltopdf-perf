@@ -18,10 +18,11 @@ type ToX struct {
 const wkhtmltopdf = "wkhtmltopdf"
 
 var wkCh1, wkChN chan *InOut
+var wkCh1Notify = make(chan struct{})
 
 func init() {
 	options := ExecOptions{Timeout: 10 * time.Second}
-	wkCh1 = make(chan *InOut, 1)
+	wkCh1 = make(chan *InOut)
 	wkChN = make(chan *InOut, runtime.NumCPU()*2)
 	go func() {
 		for {
@@ -57,8 +58,6 @@ func backToPool(wk *InOut) {
 }
 
 func (p *ToX) ToPDFStdinArgs(htmlURL, extraArgs string) (pdf []byte, err error) {
-	wk := getWk()
-
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return nil, err
@@ -68,14 +67,10 @@ func (p *ToX) ToPDFStdinArgs(htmlURL, extraArgs string) (pdf []byte, err error) 
 	if extraArgs != "" {
 		in = extraArgs + " " + in
 	}
+
+	wk := getWk()
 	result, err := wk.Send(in, "Done", "Error:")
 	log.Printf("wk result: %s", result)
-	if err == nil {
-		pdf, err = os.ReadFile(out)
-		os.Remove(out)
-		return pdf, err
-	}
-
 	if err == ErrTimeout {
 		if err := wk.Kill(); err != nil {
 			log.Printf("failed to kill, error: %v", err)
@@ -83,6 +78,13 @@ func (p *ToX) ToPDFStdinArgs(htmlURL, extraArgs string) (pdf []byte, err error) 
 	} else {
 		backToPool(wk)
 	}
+
+	if err == nil {
+		pdf, err = os.ReadFile(out)
+		os.Remove(out)
+		return pdf, err
+	}
+
 	return nil, err
 }
 
