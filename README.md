@@ -18,4 +18,4 @@ browser engine that is used to render HTML and javascript - Chrome uses that eng
 
 1. quiet mode : `wkhtmltopdf -q a.html a.pdf`
 1. stdout redirect : `wkhtmltopdf -q a.html - > a.pdf`
-1. stdin/stdout: `cat a.html|wkhtmltopdf -q - - > aa.pdf`
+1. stdin/stdout: `cat a.html | wkhtmltopdf -q - - > aa.pdf`

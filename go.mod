@@ -1,4 +1,4 @@
-module wkperf
+module github.com/bingoohuang/wkp
 
 go 1.16
 

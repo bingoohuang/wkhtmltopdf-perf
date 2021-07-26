@@ -2,20 +2,20 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/bingoohuang/wkp"
+	"github.com/bingoohuang/wkp/wkhtml"
 	"io"
 	"io/ioutil"
 	"mime"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
-	"wkperf/wkhtml"
 )
 
 func main() {
+	http.Handle("/assets/", http.FileServer(http.FS(wkp.Assets)))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if err := toPdf(w, r); err != nil {
 			fmt.Println(err)
@@ -26,41 +26,21 @@ func main() {
 }
 
 func toPdf(w http.ResponseWriter, r *http.Request) error {
-	fn, data, err := getUploadFile(r)
-	if err != nil {
-		return err
-	}
-	q := r.URL.Query()
-	if len(data) == 0 {
-		data = []byte(q.Get("html"))
-	}
-	if len(data) == 0 {
-		d := json.NewDecoder(r.Body)
-		var body struct {
-			Html []byte `json:"html"`
-		}
-		if err := d.Decode(&body); err == nil {
-			data = body.Html
-		}
-	}
-	if len(data) == 0 {
+	htmlURL := r.URL.Query().Get("url")
+	extra := r.URL.Query().Get("extra")
+	if len(htmlURL) == 0 {
 		return errors.New("no html found")
 	}
 
 	wk := &wkhtml.ToX{}
-	pdf, err := wk.ToPDF(data)
+	pdf, err := wk.ToPDFByURL(htmlURL, extra)
 	if err != nil {
 		return err
 	}
 
-	if fn == "" {
-		fn = time.Now().Format(`20060102150405000`)
-	}
-	if !strings.HasSuffix(fn, ".pdf") {
-		fn += ".pdf"
-	}
+	fn := time.Now().Format(`20060102150405000`) + ".pdf"
 
-	if q.Get("dl") != "" {
+	if r.URL.Query().Get("dl") != "" {
 		cd := mime.FormatMediaType("attachment", map[string]string{"filename": fn})
 		w.Header().Set("Content-Disposition", cd)
 	}
@@ -73,7 +53,7 @@ func toPdf(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func getUploadFile(r *http.Request) (fn string, data []byte, err error) {
+func ParseUploadFile(r *http.Request) (fn string, data []byte, err error) {
 	if err := r.ParseMultipartForm(16 /*16 MiB */ << 20); err != nil {
 		if err == http.ErrNotMultipart {
 			err = nil
