@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"github.com/bingoohuang/wkp/pkg/util"
+	"go.uber.org/multierr"
 	"io"
 	"log"
 	"os"
@@ -127,9 +128,12 @@ func (i *V2Item) Send(input string, okTerm, errTerm string) (string, error) {
 	}
 }
 
-func (i *V2Item) Kill() interface{} {
-	i.StdoutPipe.Close()
-	return i.cmd.Process.Kill()
+func (i *V2Item) Kill() error {
+	log.Printf("start to kill %d", i.cmd.Process.Pid)
+	err1 := i.StdoutPipe.Close()
+	err2 := i.cmd.Process.Kill()
+	_, err3 := i.cmd.Process.Wait()
+	return multierr.Combine(err1, err2, err3)
 }
 
 func (o ExecOptions) NewV2Item(name string, args ...string) (inOut *V2Item, err error) {
