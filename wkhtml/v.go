@@ -1,35 +1,27 @@
 package wkhtml
 
 import (
-	"errors"
+	"github.com/bingoohuang/wkp/pkg/util"
 	"log"
+	"os"
 	"strconv"
 	"time"
 )
 
-type ToX struct {
-}
+func (p *ToX) ToPdf(htmlURL, extraArgs string) (pdf []byte, err error) {
+	var out string
+	if out, err = util.TempFile(".pdf"); err != nil {
+		return
+	}
+	defer os.Remove(out)
 
-const wkhtmltopdf = "wkhtmltopdf"
-
-func (p *ToX) ToPdf(url, extraArgs string) (pdf []byte, err error) {
-	cmd := wkhtmltopdf + " " + extraArgs + " --quiet " + strconv.Quote(url) + " - | cat"
+	cmd := wkhtmltopdf + " " + extraArgs + " --quiet " + strconv.Quote(htmlURL) + " " + out
 	log.Printf("cmd: %s", cmd)
 	options := ExecOptions{Timeout: 10 * time.Second}
-	return options.Exec(nil, "sh", "-c", cmd)
-}
-
-type ExecOptions struct {
-	Timeout time.Duration
-}
-
-var ErrTimeout = errors.New("execute timeout")
-var ErrExecute = errors.New("execute error")
-
-func (o ExecOptions) Exec(data []byte, name string, args ...string) (result []byte, err error) {
-	item, err := o.NewV1pItem(name, args...)
-	if err != nil {
-		return nil, err
+	_, err = options.Exec(nil, "sh", "-c", cmd)
+	if err == nil {
+		return os.ReadFile(out)
 	}
-	return item.Exec(data)
+
+	return nil, err
 }

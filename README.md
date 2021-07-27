@@ -3,7 +3,18 @@
 performance prof for wkhtmltopdf.
 
 [wkhtmltopdf](https://github.com/wkhtmltopdf/wkhtmltopdf) converts HTML to PDF using Webkit (QtWebKit), which is the
-browser engine that is used to render HTML and javascript - Chrome uses that engine too..
+browser engine that is used to render HTML and javascript - Chrome uses that engine too.
+
+## Versions
+
+版本 | 进程预热 | 进程重用 | html参数 | PDF 落盘 | wkhtmltopdf
+---|---|----|----|----|----
+-| - | - | 网址 | Y |  `wkhtmltopdf --quiet http://a.b.c/a.html a.pdf`
+0| - | - | 网址 | N（stdout) | `wkhtmltopdf --quiet http://a.b.c/a.html - \| cat`
+1| - | - | 内容 (stdin) | N（stdout) | `wkhtmltopdf --quiet - - \| cat`
+1p| 预热 | -| 内容 (stdin) | N（stdout) | `wkhtmltopdf --quiet - - \| cat`
+2| 预热 | 重用 | 网址 | Y |  `wkhtmltopdf --read-args-from-stdin`
+2p| 预热 | 重用 | 网址 | N (fuse) | `wkhtmltopdf --read-args-from-stdin`
 
 ## Install
 
