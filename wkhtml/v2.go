@@ -18,24 +18,30 @@ import (
 )
 
 type V2Pool struct {
-	num      int32
-	max      int32
-	ch1, chn chan *V2Item
+	ch       chan *V2Item
+	wait     chan bool
+	num, max int32
 }
 
 func NewV2Pool() *V2Pool {
 	options := ExecOptions{Timeout: 10 * time.Second}
 	p := &V2Pool{max: int32(runtime.NumCPU() * 2)}
-	p.ch1 = make(chan *V2Item)
-	p.chn = make(chan *V2Item, p.max)
+	p.ch = make(chan *V2Item, p.max)
+	p.wait = make(chan bool)
 	go func() {
 		for {
+			<-p.wait
+			if atomic.LoadInt32(&p.num) >= p.max {
+				continue // 生产已经达到上限
+			}
+
 			wk, err := options.NewV2Item(wkhtmltopdf, "--read-args-from-stdin")
 			if err != nil {
-				time.Sleep(10 * time.Second)
+				time.Sleep(1 * time.Second)
 				continue
 			}
-			p.ch1 <- wk
+			atomic.AddInt32(&p.num, 1)
+			p.ch <- wk
 		}
 	}()
 
@@ -43,30 +49,17 @@ func NewV2Pool() *V2Pool {
 }
 
 func (p *V2Pool) borrow() *V2Item {
+	// 通知生产
 	select {
-	case wk := <-p.chn:
-		atomic.AddInt32(&p.num, -1)
-		return wk
+	case p.wait <- true:
 	default:
-		if n := atomic.LoadInt32(&p.num); n >= p.max {
-			wk := <-p.chn
-			atomic.AddInt32(&p.num, -1)
-			return wk
-		}
-		return <-p.ch1
 	}
+	// 取走
+	return <-p.ch
 }
 
-func (p *V2Pool) back(wk *V2Item) {
-	select {
-	case p.chn <- wk:
-		atomic.AddInt32(&p.num, 1)
-	default:
-		if err := wk.Kill("pool is full"); err != nil {
-			log.Printf("failed to kill, error: %v", err)
-		}
-	}
-}
+func (p *V2Pool) back(wk *V2Item) { p.ch <- wk }
+func (p *V2Pool) reportKill()     { atomic.AddInt32(&p.num, -1) }
 
 var v2Pool *V2Pool
 var v2Once sync.Once

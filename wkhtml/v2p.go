@@ -59,6 +59,7 @@ func (p *ToX) SendArgs(htmlURL, extraArgs, out string) error {
 	result, err := wk.Send(in, "Done", "Error:")
 	log.Printf("wk result: %s", result)
 	if err == ErrTimeout {
+		v2Pool.reportKill()
 		if err := wk.Kill("timeout"); err != nil {
 			log.Printf("failed to kill, error: %v", err)
 		}
