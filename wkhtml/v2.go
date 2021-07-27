@@ -57,8 +57,15 @@ func (p *V2Pool) borrow() *V2Item {
 	return <-p.ch
 }
 
-func (p *V2Pool) back(wk *V2Item) { p.ch <- wk }
-func (p *V2Pool) reportKill()     { atomic.AddInt32(&p.num, -1) }
+func (p *V2Pool) back(wk *V2Item) {
+	if wk != nil {
+		p.ch <- wk
+		return
+	}
+
+	// report missing
+	atomic.AddInt32(&p.num, -1)
+}
 
 var v2Pool *V2Pool
 var v2Once sync.Once
