@@ -44,3 +44,32 @@ func TempFile(ext string) (string, error) {
 	out := filepath.Join(dir, uuid.New().String()+ext)
 	return out, nil
 }
+
+func ParseUploadFile(r *http.Request) (fn string, data []byte, err error) {
+	if err := r.ParseMultipartForm(16 /*16 MiB */ << 20); err != nil {
+		if err == http.ErrNotMultipart {
+			err = nil
+		}
+		return "", nil, err
+	}
+
+	if r.MultipartForm == nil {
+		return "", nil, nil
+	}
+
+	for _, fhs := range r.MultipartForm.File {
+		if len(fhs) == 0 {
+			continue
+		}
+
+		fh := fhs[0]
+		if f, e := fh.Open(); e == nil {
+			data, err = ioutil.ReadAll(f)
+			f.Close()
+
+			return fh.Filename, data, err
+		}
+	}
+
+	return "", nil, nil
+}
