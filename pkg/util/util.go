@@ -5,6 +5,7 @@ import (
 	"github.com/bingoohuang/wkp/pkg/uuid"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 )
 
@@ -43,6 +44,16 @@ func TempFile(ext string) (string, error) {
 	}
 	out := filepath.Join(dir, uuid.New().String()+ext)
 	return out, nil
+}
+
+func FileData(name string) string {
+	data, _ := os.ReadFile(name)
+	return string(data)
+}
+
+func FileExist(name string) bool {
+	_, err := os.Stat(name)
+	return err == nil
 }
 
 func ParseUploadFile(r *http.Request) (fn string, data []byte, err error) {
