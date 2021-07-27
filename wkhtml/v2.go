@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -62,12 +61,10 @@ func (p *V2Pool) back(wk *V2Item) {
 	select {
 	case p.chn <- wk:
 		atomic.AddInt32(&p.num, 1)
-		return
 	default:
-		if err := wk.Kill(); err != nil {
+		if err := wk.Kill("pool is full"); err != nil {
 			log.Printf("failed to kill, error: %v", err)
 		}
-		return
 	}
 }
 
@@ -75,31 +72,14 @@ var v2Pool *V2Pool
 var v2Once sync.Once
 
 func (p *ToX) ToPdfV2(htmlURL, extraArgs string) (pdf []byte, err error) {
+	v2Once.Do(func() { v2Pool = NewV2Pool() })
 	var out string
 	if out, err = util.TempFile(".pdf"); err != nil {
 		return
 	}
 	defer os.Remove(out)
 
-	in := strconv.Quote(htmlURL) + " " + out + "\n"
-	if extraArgs != "" {
-		in = extraArgs + " " + in
-	}
-
-	v2Once.Do(func() { v2Pool = NewV2Pool() })
-
-	wk := v2Pool.borrow()
-	result, err := wk.Send(in, "Done", "Error:")
-	log.Printf("wk result: %s", result)
-	if err == ErrTimeout {
-		if err := wk.Kill(); err != nil {
-			log.Printf("failed to kill, error: %v", err)
-		}
-	} else {
-		v2Pool.back(wk)
-	}
-
-	if err == nil {
+	if err = p.SendArgs(htmlURL, extraArgs, out); err == nil {
 		return os.ReadFile(out)
 	}
 
@@ -138,8 +118,8 @@ func (i *V2Item) Send(input string, okTerm, errTerm string) (string, error) {
 	}
 }
 
-func (i *V2Item) Kill() error {
-	log.Printf("start to kill %d", i.cmd.Process.Pid)
+func (i *V2Item) Kill(reason string) error {
+	log.Printf("start to kill %d by %s", i.cmd.Process.Pid, reason)
 	err1 := i.StdoutPipe.Close()
 	err2 := i.cmd.Process.Kill()
 	_, err3 := i.cmd.Process.Wait()

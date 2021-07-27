@@ -42,6 +42,14 @@ func (p *ToX) ToPdfV2p(htmlURL, extraArgs string) (pdf []byte, err error) {
 	dataCh, cancelFunc := registry.Register(name)
 	defer cancelFunc()
 
+	if err = p.SendArgs(htmlURL, extraArgs, out); err == nil {
+		return <-dataCh, nil
+	}
+
+	return nil, err
+}
+
+func (p *ToX) SendArgs(htmlURL, extraArgs, out string) error {
 	in := strconv.Quote(htmlURL) + " " + out + "\n"
 	if extraArgs != "" {
 		in = extraArgs + " " + in
@@ -51,16 +59,12 @@ func (p *ToX) ToPdfV2p(htmlURL, extraArgs string) (pdf []byte, err error) {
 	result, err := wk.Send(in, "Done", "Error:")
 	log.Printf("wk result: %s", result)
 	if err == ErrTimeout {
-		if err := wk.Kill(); err != nil {
+		if err := wk.Kill("timeout"); err != nil {
 			log.Printf("failed to kill, error: %v", err)
 		}
 	} else {
 		v2Pool.back(wk)
 	}
 
-	if err == nil {
-		return <-dataCh, nil
-	}
-
-	return nil, err
+	return err
 }
