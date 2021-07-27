@@ -50,7 +50,7 @@ func (p *ToX) ToPdfV2p(htmlURL, extraArgs string) (pdf []byte, err error) {
 }
 
 func (p *ToX) SendArgs(htmlURL, extraArgs, out string) error {
-	in := strconv.Quote(htmlURL) + " " + out + "\n"
+	in := p.CacheDirArg() + strconv.Quote(htmlURL) + " " + out + "\n"
 	if extraArgs != "" {
 		in = extraArgs + " " + in
 	}

@@ -36,7 +36,7 @@ func NewV1pPool() *V1pPool {
 	p := &V1pPool{}
 	p.chn = make(chan *V1pItem, runtime.NumCPU()*2)
 	go func() {
-		cmd := wkhtmltopdf + " " + extra + " --quiet - -|cat"
+		cmd := wkhtmltopdf + " --cache-dir /tmp/cache-wk/ " + extra + " --quiet - -|cat"
 		for {
 			wk, err := options.NewV1pItem("sh", "-c", cmd)
 			if err != nil {

@@ -7,14 +7,14 @@ browser engine that is used to render HTML and javascript - Chrome uses that eng
 
 ## Versions
 
-版本 | 进程预热 | 进程重用 | html参数 | PDF 落盘 | wkhtmltopdf | 压测1
----|---|----|----|----|----|----
--| - | - | 网址 | Y |  `wkhtmltopdf --quiet http://a.b.c/a.html a.pdf`|51.931 hits/sec
-0| - | - | 网址 | N（stdout) | `wkhtmltopdf --quiet http://a.b.c/a.html - \| cat` | 51.272 hits/sec
-1| - | - | 内容 (stdin) | N（stdout) | `wkhtmltopdf --quiet - - \| cat` | 80.113 hits/sec
-1p| 预热 | -| 内容 (stdin) | N（stdout) | `wkhtmltopdf --quiet - - \| cat` | 71.630 hits/sec
-2| 预热 | 重用 | 网址 | Y |  `wkhtmltopdf --read-args-from-stdin` | 209.262 hits/sec
-2p| 预热 | 重用 | 网址 | N (fuse) | `wkhtmltopdf --read-args-from-stdin`|225.668 hits/sec
+版本 | 进程预热 | 进程重用 | html参数 | PDF 落盘 | wkhtmltopdf | 压测1 | 压测2
+---|---|----|----|----|----|----|----
+-| - | - | 网址 | Y |  `wkhtmltopdf --quiet http://a.b.c/a.html a.pdf`|51.931 hits/sec|6.320 hits/sec
+0| - | - | 网址 | N（stdout) | `wkhtmltopdf --quiet http://a.b.c/a.html - \| cat` | 51.272 hits/sec| 6.727 hits/sec
+1| - | - | 内容 (stdin) | N（stdout) | `wkhtmltopdf --quiet - - \| cat` | 80.113 hits/sec|26.185 hits/sec (页面内链接未处理)
+1p| 预热 | -| 内容 (stdin) | N（stdout) | `wkhtmltopdf --quiet - - \| cat` | 71.630 hits/sec|27.250 hits/sec(页面内链接未处理)
+2| 预热 | 重用 | 网址 | Y |  `wkhtmltopdf --read-args-from-stdin` | 209.262 hits/sec|20.540 hits/sec
+2p| 预热 | 重用 | 网址 | N (fuse) | `wkhtmltopdf --read-args-from-stdin`|225.668 hits/sec|22.019 hits/sec
 
 1.  压测1: `gobench -l ":9337?url=http://127.0.0.1:9337/assets/b.html&v={v}"`, v2/v2p 池大小100
 

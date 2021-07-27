@@ -8,6 +8,7 @@ import (
 	"github.com/bingoohuang/wkp"
 	"github.com/bingoohuang/wkp/wkhtml"
 	"io"
+	"log"
 	"mime"
 	"net/http"
 	"strconv"
@@ -19,12 +20,13 @@ func main() {
 	addr := ":9337"
 	flag.IntVar(&wk.MaxPoolSize, "pool-size", 100, "max pool size")
 	flag.StringVar(&addr, "listen address", ":9337", "listen address")
+	flag.BoolVar(&wk.CacheDir, "cache", false, "enable --cache-dir /tmp/cache-wk/")
 	flag.Parse()
 
 	http.Handle("/assets/", http.FileServer(http.FS(wkp.Assets)))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if err := toPdf(wk, w, r); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})

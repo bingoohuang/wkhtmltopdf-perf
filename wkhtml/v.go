@@ -15,7 +15,7 @@ func (p *ToX) ToPdf(htmlURL, extraArgs string) (pdf []byte, err error) {
 	}
 	defer os.Remove(out)
 
-	cmd := wkhtmltopdf + " " + extraArgs + " --quiet " + strconv.Quote(htmlURL) + " " + out
+	cmd := wkhtmltopdf + " " + extraArgs + p.CacheDirArg() + " --quiet " + strconv.Quote(htmlURL) + " " + out
 	log.Printf("cmd: %s", cmd)
 	options := ExecOptions{Timeout: 10 * time.Second}
 	_, err = options.Exec(nil, "sh", "-c", cmd)

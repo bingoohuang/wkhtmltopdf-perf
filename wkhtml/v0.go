@@ -9,15 +9,24 @@ import (
 
 type ToX struct {
 	MaxPoolSize int
+	CacheDir    bool
 }
 
 const wkhtmltopdf = "wkhtmltopdf"
 
 func (p *ToX) ToPdfV0(url, extraArgs string) (pdf []byte, err error) {
-	cmd := wkhtmltopdf + " " + extraArgs + " --quiet " + strconv.Quote(url) + " - | cat"
+	cmd := wkhtmltopdf + " " + extraArgs + p.CacheDirArg() + " --quiet " + strconv.Quote(url) + " - | cat"
 	log.Printf("cmd: %s", cmd)
 	options := ExecOptions{Timeout: 10 * time.Second}
 	return options.Exec(nil, "sh", "-c", cmd)
+}
+
+func (p *ToX) CacheDirArg() string {
+	if !p.CacheDir {
+		return ""
+	}
+
+	return " --cache-dir /tmp/cache-wk/ "
 }
 
 type ExecOptions struct {
