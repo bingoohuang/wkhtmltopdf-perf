@@ -9,12 +9,12 @@ browser engine that is used to render HTML and javascript - Chrome uses that eng
 
 版本 | 进程预热 | 进程重用 | html参数 | PDF 落盘 | wkhtmltopdf | 压测1 TPS(c100) | 压测2 TPS(c25)
 ---|---|----|----|----|----|----|----
--| - | - | 网址 | Y |  `wkhtmltopdf --quiet http://a.b.c/a.html a.pdf`|51.931|6.320
-0| - | - | 网址 | N（stdout) | `wkhtmltopdf --quiet http://a.b.c/a.html - \| cat` | 51.272| 16.121
-1| - | - | 内容 (stdin) | N（stdout) | `wkhtmltopdf --quiet - - \| cat` | 80.113|53.793
-1p| 预热 | -| 内容 (stdin) | N（stdout) | `wkhtmltopdf --quiet - - \| cat` | 71.630|54.223
-2| 预热 | 重用 | 网址 | Y |  `wkhtmltopdf --read-args-from-stdin` | 209.262|26.457
-2p| 预热 | 重用 | 网址 | N (fuse) | `wkhtmltopdf --read-args-from-stdin`|225.668|26.314
+-| - | - | 网址 | Y |  `wk --quiet http://a.b.c/a.html a.pdf`|51.931|16.370
+0| - | - | 网址 | N（stdout) | `wk --quiet http://a.b.c/a.html - \| cat` | 51.272| 16.121
+1| - | - | 内容 (stdin) | N（stdout) | `wk --quiet - - \| cat` | 80.113|53.793
+1p| 预热 | -| 内容 (stdin) | N（stdout) | `wk --quiet - - \| cat` | 71.630|54.223
+2| 预热 | 重用 | 网址 | Y |  `wk --read-args-from-stdin` | 209.262|26.457
+2p| 预热 | 重用 | 网址 | N (fuse) | `wk --read-args-from-stdin`|225.668|26.314
 
 1. 压测1: `gobench -l ":9337?url=http://127.0.0.1:9337/assets/b.html&v={v}"`, v2/v2p 池大小100
 2. 1/1p时， 页面内链接未处理，对于有页面内css/js时，此项指标无意义
