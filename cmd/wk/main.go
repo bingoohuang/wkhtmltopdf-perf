@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"flag"
 	"fmt"
 	"github.com/bingoohuang/wkp"
 	"github.com/bingoohuang/wkp/wkhtml"
@@ -15,25 +16,29 @@ import (
 )
 
 func main() {
+	wk := &wkhtml.ToX{}
+	addr := ":9337"
+	flag.IntVar(&wk.MaxPoolSize, "pool-size", 100, "max pool size")
+	flag.StringVar(&addr, "listen address", ":9337", "listen address")
+	flag.Parse()
+
 	http.Handle("/assets/", http.FileServer(http.FS(wkp.Assets)))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if err := toPdf(w, r); err != nil {
+		if err := toPdf(wk, w, r); err != nil {
 			fmt.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
-	addr := ":9337"
 	fmt.Println("listening on ", addr)
 	panic(http.ListenAndServe(addr, nil))
 }
 
-func toPdf(w http.ResponseWriter, r *http.Request) error {
+func toPdf(wk *wkhtml.ToX, w http.ResponseWriter, r *http.Request) error {
 	url := r.URL.Query().Get("url")
 	if len(url) == 0 {
 		return errors.New("no html found")
 	}
 
-	wk := &wkhtml.ToX{}
 	toPdf := wk.ToPdf
 
 	switch v := r.URL.Query().Get("v"); v {

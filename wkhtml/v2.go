@@ -9,7 +9,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -23,9 +22,9 @@ type V2Pool struct {
 	num, max int32
 }
 
-func NewV2Pool() *V2Pool {
+func NewV2Pool(max int) *V2Pool {
 	options := ExecOptions{Timeout: 10 * time.Second}
-	p := &V2Pool{max: int32(runtime.NumCPU() * 2)}
+	p := &V2Pool{max: int32(max)}
 	p.ch = make(chan *V2Item, p.max)
 	p.wait = make(chan bool)
 	go func() {
@@ -65,7 +64,7 @@ var v2Pool *V2Pool
 var v2Once sync.Once
 
 func (p *ToX) ToPdfV2(htmlURL, extraArgs string) (pdf []byte, err error) {
-	v2Once.Do(func() { v2Pool = NewV2Pool() })
+	v2Once.Do(func() { v2Pool = NewV2Pool(p.MaxPoolSize) })
 	var out string
 	if out, err = util.TempFile(".pdf"); err != nil {
 		return

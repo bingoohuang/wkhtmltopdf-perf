@@ -8,6 +8,7 @@ import (
 )
 
 type ToX struct {
+	MaxPoolSize int
 }
 
 const wkhtmltopdf = "wkhtmltopdf"

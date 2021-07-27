@@ -34,7 +34,7 @@ func InitMount() (*mount.FileRegistry, string) {
 }
 
 func (p *ToX) ToPdfV2p(htmlURL, extraArgs string) (pdf []byte, err error) {
-	v2Once.Do(func() { v2Pool = NewV2Pool() })
+	v2Once.Do(func() { v2Pool = NewV2Pool(p.MaxPoolSize) })
 	v2pOnce.Do(func() { registry, mountDir = InitMount() })
 
 	name := uuid.New().String() + ".pdf"
