@@ -13,19 +13,22 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 )
 
 type V2Pool struct {
+	num      int32
+	max      int32
 	ch1, chn chan *V2Item
 }
 
 func NewV2Pool() *V2Pool {
 	options := ExecOptions{Timeout: 10 * time.Second}
-	p := &V2Pool{}
+	p := &V2Pool{max: int32(runtime.NumCPU() * 2)}
 	p.ch1 = make(chan *V2Item)
-	p.chn = make(chan *V2Item, runtime.NumCPU()*2)
+	p.chn = make(chan *V2Item, p.max)
 	go func() {
 		for {
 			wk, err := options.NewV2Item(wkhtmltopdf, "--read-args-from-stdin")
@@ -43,8 +46,14 @@ func NewV2Pool() *V2Pool {
 func (p *V2Pool) borrow() *V2Item {
 	select {
 	case wk := <-p.chn:
+		atomic.AddInt32(&p.num, -1)
 		return wk
 	default:
+		if n := atomic.LoadInt32(&p.num); n >= p.max {
+			wk := <-p.chn
+			atomic.AddInt32(&p.num, -1)
+			return wk
+		}
 		return <-p.ch1
 	}
 }
@@ -52,6 +61,7 @@ func (p *V2Pool) borrow() *V2Item {
 func (p *V2Pool) back(wk *V2Item) {
 	select {
 	case p.chn <- wk:
+		atomic.AddInt32(&p.num, 1)
 		return
 	default:
 		if err := wk.Kill(); err != nil {
