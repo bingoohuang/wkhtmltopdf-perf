@@ -40,6 +40,8 @@ wkhtmltopdf 0.12.6 (with patched qt)
    Run Command   :wk -v
    wk (a go wrapper for wkhtmltopdf), v1.0.0 released at 2021-07-28 09:39:07
    ```
+1. API
+   `GET http://192.168.126.72:9339?url={HtmlPageURL}&extra={ExtraWkArgs}`
 
 ## 5 minutes to start
 
