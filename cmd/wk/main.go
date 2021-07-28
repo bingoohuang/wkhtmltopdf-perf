@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/bingoohuang/gg/pkg/ctl"
@@ -20,7 +21,7 @@ import (
 )
 
 func (Config) VersionInfo() string {
-	return "wk(a go wrapper for wkhtmltopdf) v1.0.1 2021-07-28 13:14:39"
+	return "wk(a go wrapper for wkhtmltopdf) v1.1.0 2021-07-28 14:10:14"
 }
 
 func (c Config) Usage() string {
@@ -74,6 +75,11 @@ func main() {
 	panic(http.ListenAndServe(c.Listen, nil))
 }
 
+type Resp struct {
+	File  string `json:"file"`
+	Error string `json:"error"`
+}
+
 func toPdf(wk *wkhtml.ToX, wkVersion string, w http.ResponseWriter, r *http.Request) error {
 	url := r.URL.Query().Get("url")
 	if len(url) == 0 {
@@ -81,10 +87,22 @@ func toPdf(wk *wkhtml.ToX, wkVersion string, w http.ResponseWriter, r *http.Requ
 	}
 
 	extra := r.URL.Query().Get("extra")
+	saveFile := r.URL.Query().Get("saveFile") // 是否存成PDF文件
 	toPdf := switchVersion(wk, wkVersion, r.URL.Query().Get("v"))
-	pdf, err := toPdf(url, extra)
+	pdf, err := toPdf(url, extra, saveFile == "y")
+
+	if saveFile == "y" {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	}
 	if err != nil {
+		if saveFile == "y" {
+			return json.NewEncoder(w).Encode(Resp{Error: err.Error()})
+		}
 		return err
+	}
+
+	if saveFile == "y" {
+		return json.NewEncoder(w).Encode(Resp{File: string(pdf)})
 	}
 
 	if r.URL.Query().Get("dl") != "" {
@@ -99,7 +117,7 @@ func toPdf(wk *wkhtml.ToX, wkVersion string, w http.ResponseWriter, r *http.Requ
 	return err
 }
 
-func switchVersion(wk *wkhtml.ToX, wkVersion, v string) func(htmlURL string, extraArgs string) (pdf []byte, err error) {
+func switchVersion(wk *wkhtml.ToX, wkVersion, v string) func(htmlURL string, extraArgs string, saveFile bool) (pdf []byte, err error) {
 	if v == "" {
 		v = wkVersion
 	}

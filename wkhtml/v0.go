@@ -2,6 +2,7 @@ package wkhtml
 
 import (
 	"errors"
+	"github.com/bingoohuang/wkp/pkg/util"
 	"log"
 	"strconv"
 	"time"
@@ -14,11 +15,30 @@ type ToX struct {
 
 const wkhtmltopdf = "wkhtmltopdf"
 
-func (p *ToX) ToPdfV0(url, extraArgs string) (pdf []byte, err error) {
-	cmd := wkhtmltopdf + " " + extraArgs + p.CacheDirArg() + " --quiet " + strconv.Quote(url) + " - | cat"
+func (p *ToX) ToPdfV0(url, extraArgs string, saveFile bool) (pdf []byte, err error) {
+	cmd := wkhtmltopdf + " " + extraArgs + p.CacheDirArg() + " --quiet " + strconv.Quote(url)
+	var out string
+
+	if saveFile {
+		if out, err = util.TempFile(".pdf"); err != nil {
+			return
+		}
+		cmd += " " + out
+	} else {
+		cmd += " - | cat"
+	}
 	log.Printf("cmd: %s", cmd)
 	options := ExecOptions{Timeout: 10 * time.Second}
-	return options.Exec(nil, "sh", "-c", cmd)
+	output, err := options.Exec(nil, "sh", "-c", cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	if saveFile {
+		return []byte(out), nil
+	}
+
+	return output, nil
 }
 
 func (p *ToX) CacheDirArg() string {

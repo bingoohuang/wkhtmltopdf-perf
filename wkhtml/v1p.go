@@ -2,6 +2,7 @@ package wkhtml
 
 import (
 	"bytes"
+	"errors"
 	"github.com/bingoohuang/wkp/pkg/util"
 	"io"
 	"log"
@@ -12,7 +13,12 @@ import (
 	"time"
 )
 
-func (p *ToX) ToPdfV1p(url, _ string) (pdf []byte, err error) {
+var ErrSaveFileNotSupported = errors.New("save file not supported")
+
+func (p *ToX) ToPdfV1p(url, _ string, saveFile bool) (pdf []byte, err error) {
+	if saveFile {
+		return nil, ErrSaveFileNotSupported
+	}
 	data, err := util.GetContent(url)
 	if err != nil {
 		return nil, err

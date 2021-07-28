@@ -76,19 +76,25 @@ func (p *V2Pool) back(wk *V2Item) {
 var v2Pool *V2Pool
 var v2Once sync.Once
 
-func (p *ToX) ToPdfV2(htmlURL, extraArgs string) (pdf []byte, err error) {
+func (p *ToX) ToPdfV2(htmlURL, extraArgs string, saveFile bool) (pdf []byte, err error) {
 	v2Once.Do(func() { v2Pool = NewV2Pool(p.MaxPoolSize) })
 	var out string
 	if out, err = util.TempFile(".pdf"); err != nil {
 		return
 	}
-	defer os.Remove(out)
+	if !saveFile {
+		defer os.Remove(out)
+	}
 
-	if err = p.SendArgs(htmlURL, extraArgs, out); err == nil {
+	err = p.SendArgs(htmlURL, extraArgs, out)
+	if err != nil {
+		return nil, err
+	}
+	if !saveFile {
 		return os.ReadFile(out)
 	}
 
-	return nil, err
+	return []byte(out), nil
 }
 
 type V2Item struct {

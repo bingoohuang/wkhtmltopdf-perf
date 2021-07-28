@@ -8,18 +8,23 @@ import (
 	"time"
 )
 
-func (p *ToX) ToPdf(htmlURL, extraArgs string) (pdf []byte, err error) {
+func (p *ToX) ToPdf(htmlURL, extraArgs string, saveFile bool) (pdf []byte, err error) {
 	var out string
 	if out, err = util.TempFile(".pdf"); err != nil {
 		return
 	}
-	defer os.Remove(out)
+	if !saveFile {
+		defer os.Remove(out)
+	}
 
 	cmd := wkhtmltopdf + " " + extraArgs + p.CacheDirArg() + " --quiet " + strconv.Quote(htmlURL) + " " + out
 	log.Printf("cmd: %s", cmd)
 	options := ExecOptions{Timeout: 10 * time.Second}
 	_, err = options.Exec(nil, "sh", "-c", cmd)
 	if err == nil {
+		if saveFile {
+			return []byte(out), nil
+		}
 		return os.ReadFile(out)
 	}
 

@@ -33,7 +33,7 @@ func InitMount() (*mount.FileRegistry, string) {
 	return registry, mntDir
 }
 
-func (p *ToX) ToPdfV2p(htmlURL, extraArgs string) (pdf []byte, err error) {
+func (p *ToX) ToPdfV2p(htmlURL, extraArgs string, saveFile bool) (pdf []byte, err error) {
 	v2Once.Do(func() { v2Pool = NewV2Pool(p.MaxPoolSize) })
 	v2pOnce.Do(func() { registry, mountDir = InitMount() })
 
@@ -43,7 +43,12 @@ func (p *ToX) ToPdfV2p(htmlURL, extraArgs string) (pdf []byte, err error) {
 	defer cancelFunc()
 
 	if err = p.SendArgs(htmlURL, extraArgs, out); err == nil {
-		return <-dataCh, nil
+		bytes := <-dataCh
+		if saveFile {
+			return []byte(out), nil
+		} else {
+			return bytes, nil
+		}
 	}
 
 	return nil, err

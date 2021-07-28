@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func (p *ToX) ToPdfV1(url, extraArgs string) (pdf []byte, err error) {
+func (p *ToX) ToPdfV1(url, extraArgs string, saveFile bool) (pdf []byte, err error) {
 	data, err := util.GetContent(url)
 	if err != nil {
 		return nil, err
@@ -14,8 +14,27 @@ func (p *ToX) ToPdfV1(url, extraArgs string) (pdf []byte, err error) {
 
 	log.Printf("content read (%d): %s", len(data), url)
 
-	cmd := wkhtmltopdf + " " + extraArgs + p.CacheDirArg() + " --quiet " + " - - | cat"
+	cmd := wkhtmltopdf + " " + extraArgs + p.CacheDirArg()
+	var out string
+
+	if saveFile {
+		if out, err = util.TempFile(".pdf"); err != nil {
+			return
+		}
+		cmd += " --quiet - " + out
+	} else {
+		cmd += " --quiet - - | cat"
+	}
 	log.Printf("cmd: %s", cmd)
 	options := ExecOptions{Timeout: 10 * time.Second}
-	return options.Exec(data, "sh", "-c", cmd)
+	stdout, err := options.Exec(data, "sh", "-c", cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	if saveFile {
+		return []byte(out), nil
+	}
+
+	return stdout, nil
 }
