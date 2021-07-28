@@ -5,6 +5,11 @@ performance prof for wkhtmltopdf.
 [wkhtmltopdf](https://github.com/wkhtmltopdf/wkhtmltopdf) converts HTML to PDF using Webkit (QtWebKit), which is the
 browser engine that is used to render HTML and javascript - Chrome uses that engine too.
 
+wkhtmltopdf 是一个开源的，使用 Qt WebKit 渲染引擎，把 html 转换为 pdf 文件的命令行工具。
+wkhtmltopdf 还有一个双胞胎兄弟 wkhtmltoimage，顾名思义，它可以把 html 转换为 image 图片。
+
+简单的讲，wkhtmltopdf 用于把网页转换成 pdf 文件。
+
 ## 不同实现版本之间的差异对比
 
 ```sh

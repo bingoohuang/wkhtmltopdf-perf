@@ -48,6 +48,12 @@ func NewV2Pool(max int) *V2Pool {
 }
 
 func (p *V2Pool) borrow() *V2Item {
+	// 尝试获取
+	select {
+	case v := <-p.ch:
+		return v
+	default:
+	}
 	// 通知生产
 	select {
 	case p.wait <- true:
@@ -94,6 +100,7 @@ type V2Item struct {
 
 func (i *V2Item) Send(input string, okTerm, errTerm string) (string, error) {
 	util.ClearChan(i.Out)
+	log.Printf("Send args: %s", input)
 	i.In <- input
 
 	out := ""

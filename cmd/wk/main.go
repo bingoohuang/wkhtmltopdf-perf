@@ -20,7 +20,7 @@ import (
 )
 
 func (Config) VersionInfo() string {
-	return "wk(a go wrapper for wkhtmltopdf) v1.0.0 2021-07-28 12:49:04"
+	return "wk(a go wrapper for wkhtmltopdf) v1.0.1 2021-07-28 13:14:39"
 }
 
 func (c Config) Usage() string {
