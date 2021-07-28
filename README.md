@@ -5,7 +5,12 @@ performance prof for wkhtmltopdf.
 [wkhtmltopdf](https://github.com/wkhtmltopdf/wkhtmltopdf) converts HTML to PDF using Webkit (QtWebKit), which is the
 browser engine that is used to render HTML and javascript - Chrome uses that engine too.
 
-## Versions
+## 不同实现版本之间的差异对比
+
+```sh
+$ wkhtmltopdf -V
+wkhtmltopdf 0.12.6 (with patched qt)
+```
 
 版本 | 进程预热 | 进程重用 | html参数 | PDF 落盘 | wkhtmltopdf | 压测1 TPS(c100) | 压测2 TPS(c25)
 ---|---|----|----|----|----|----|----
@@ -22,17 +27,20 @@ browser engine that is used to render HTML and javascript - Chrome uses that eng
 ## Install
 
 1. Get the latest downloads from [here](https://wkhtmltopdf.org/downloads.html).
-1. Linux install
+1. [Linux install](https://github.com/adrg/go-wkhtmltopdf/wiki/Install-on-Linux)
     - centos: `yum localinstall wkhtmltox.rpm`
     - fedora: `dnf localinstall wkhtmltox.rpm`
     - Dibian: `sudo dpkg -i wkhtmltox.deb; sudo ldconfig`
-    - [more](https://github.com/adrg/go-wkhtmltopdf/wiki/Install-on-Linux)
 
 ## 5 minutes to start
 
 1. quiet mode : `wkhtmltopdf -q a.html a.pdf`
 1. stdout redirect : `wkhtmltopdf -q a.html - > a.pdf`
-1. stdin/stdout: `cat a.html | wkhtmltopdf -q - - > aa.pdf`
+1. stdin/stdout:
+    - [You need to specify at least one input file, and exactly one output file, Use - for stdin or stdout](https://github.com/wkhtmltopdf/wkhtmltopdf/blob/master/src/pdf/pdfcommandlineparser.cc)
+    - `cat a.html | wkhtmltopdf -q - - > a.pdf`
+    - `echo '<p>Hello</p>' | wkhtmltopdf -q - - > hello.pdf`
+1. [wkhtmltopdf Go bindings and high level interface for HTML to PDF conversion](https://github.com/adrg/go-wkhtmltopdf)
 
 ## read-args-from-stdin
 
@@ -57,3 +65,20 @@ Loading pages (1/6)
 Error: Failed to load http://assets/x.html, with network status code 3 and http status code 0 - Host assets not found
 Error: Failed loading page http://assets/x.html (sometimes it will work just to ignore this error with --load-error-handling ignore)
 ```
+
+## Resouces
+
+1. [wkhtmltox to provide high performance access to wkhtmltopdf and wkhtmltoimage from node.js](https://github.com/tcort/wkhtmltox)
+1. [blob One Year With Wkhtmltopdf: One Thousand Problems, One Thousand Solutions](https://blog.theodo.com/2016/12/wkhtmltopdf/)
+   > Wkhtmltopdf has dependencies. On Linux, I had to install zlib, fontconfig, freetype, and X11 libs
+1. 从标准输入获取参数
+   > 如果需要对许多页面进行批量处理，并且感觉 `wkhtmltopdf` 开启比较慢，可以尝试使用 `--read-args-from-stdin` 参数。
+   > wkhtmltopdf 命令会为 `--read-args-from-stdin` 参数发送过来的每一行进行一次单独命令调用。
+   > 也就是说此参数每读取一行都会执行一次 wkhtmltopdf 命令。而最终执行的命令中的参数是命令行中参数与此参数读取的标准输入流中参数的结合。
+   > 下面的代码段是一个例子:
+   ```sh
+   echo "https://baike.baidu.com/item/2020%E5%B9%B4%E4%B8%9C%E4%BA%AC%E5%A5%A5%E8%BF%90%E4%BC%9A#hotspotmining a.pdf" >> cmds
+   echo "cover baidu.com https://baike.baidu.com/item/%E5%8F%B0%E9%A3%8E%E7%83%9F%E8%8A%B1/58020097 b.pdf" >> cmds
+   wkhtmltopdf --read-args-from-stdin < cmds
+   ```
+
