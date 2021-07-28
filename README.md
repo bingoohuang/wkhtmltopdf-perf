@@ -21,7 +21,7 @@ wkhtmltopdf 0.12.6 (with patched qt)
 2| 预热 | 重用 | 网址 | Y |  `wk --read-args-from-stdin` | 209.262|26.457
 2p| 预热 | 重用 | 网址 | N (fuse) | `wk --read-args-from-stdin`|225.668|26.314
 
-1. 压测1: `gobench -l ":9337?url=http://127.0.0.1:9337/assets/b.html&v={v}"`, v2/v2p 池大小100
+1. 压测1: `gobench -l ":9337?url=http://127.0.0.1:9337/b.html&v={v}"`, v2/v2p 池大小100
 2. 1/1p时， 页面内链接未处理，对于有页面内css/js时，此项指标无意义
 
 ## Install
@@ -31,6 +31,15 @@ wkhtmltopdf 0.12.6 (with patched qt)
     - centos: `yum localinstall wkhtmltox.rpm`
     - fedora: `dnf localinstall wkhtmltox.rpm`
     - Dibian: `sudo dpkg -i wkhtmltox.deb; sudo ldconfig`
+1. 安装 `wk`
+   ```sh
+   $ make linux
+   $ bssh scp ~/go/bin/linux_amd64/wk r:/usr/local/bin/ -H 126.72
+   $ bssh -H 126.72 wk -v                                             
+   Select Server :zzdev1
+   Run Command   :wk -v
+   wk (a go wrapper for wkhtmltopdf), v1.0.0 released at 2021-07-28 09:39:07
+   ```
 
 ## 5 minutes to start
 

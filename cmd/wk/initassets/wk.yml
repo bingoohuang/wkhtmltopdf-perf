@@ -1,0 +1,8 @@
+# MaxPoolSize value 进程池大小(默认 %d)
+MaxPoolSize: 0
+# Listen value 只取前N个检查(默认 :9337)
+Listen: ":9337"
+# WkVersion value Wk包装版本号, 0/1/1p/2/2p（默认 2)
+WkVersion: 2
+# EnableCacheDir 是否开启Wk的缓存目录（默认 false)
+EnableCacheDir: false

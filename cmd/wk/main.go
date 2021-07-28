@@ -2,46 +2,86 @@ package main
 
 import (
 	"bytes"
+	"embed"
 	"errors"
-	"flag"
 	"fmt"
+	"github.com/bingoohuang/gg/pkg/ctl"
+	"github.com/bingoohuang/gg/pkg/flagparse"
+	"github.com/bingoohuang/golog"
 	"github.com/bingoohuang/wkp"
 	"github.com/bingoohuang/wkp/wkhtml"
 	"io"
 	"log"
 	"mime"
 	"net/http"
+	"runtime"
 	"strconv"
 	"time"
 )
 
-func main() {
-	wk := &wkhtml.ToX{}
-	addr := ":9337"
-	flag.IntVar(&wk.MaxPoolSize, "pool-size", 100, "max pool size")
-	flag.StringVar(&addr, "listen address", ":9337", "listen address")
-	flag.BoolVar(&wk.CacheDir, "cache", false, "enable --cache-dir /tmp/cache-wk/")
-	flag.Parse()
+func (Config) VersionInfo() string {
+	return "wk(a go wrapper for wkhtmltopdf) v1.0.0 2021-07-28 12:49:04"
+}
 
-	http.Handle("/assets/", http.FileServer(http.FS(wkp.Assets)))
+func (c Config) Usage() string {
+	return fmt.Sprintf(`Usage of %s:
+  -MaxPoolSize value 进程池大小(默认 %d)
+  -Listen value 只取前N个检查(默认 :9337)
+  -WkVersion value Wk包装版本号, 0/1/1p/2/2p（默认 2)
+  -EnableCacheDir 是否开启Wk的缓存目录（默认 false)
+  -v 打印版本号后退出`, c.VersionInfo(), runtime.NumCPU()*10)
+}
+
+type Config struct {
+	Config  string `flag:"c" usage:"yaml config filepath"`
+	Init    bool
+	Version bool `flag:"v"`
+
+	MaxPoolSize    int
+	Listen         string `val:":9337"`
+	WkVersion      string `val:"2"`
+	EnableCacheDir bool
+}
+
+func (c *Config) PostProcess() {
+	if c.MaxPoolSize == 0 {
+		c.MaxPoolSize = runtime.NumCPU() * 10
+	}
+}
+
+//go:embed initassets
+var initAssets embed.FS
+
+func main() {
+	c := &Config{}
+	flagparse.Parse(c, flagparse.AutoLoadYaml("c", "wk.yml"))
+	ctl.Config{Initing: c.Init, InitFiles: initAssets}.ProcessInit()
+	golog.SetupLogrus()
+	log.Printf("config: %+v created", c)
+
+	wk := &wkhtml.ToX{MaxPoolSize: c.MaxPoolSize, CacheDir: c.EnableCacheDir}
+
+	assetFileServer := http.FileServer(http.FS(wkp.Assets))
+	http.Handle("/a.html", assetFileServer)
+	http.Handle("/b.html", assetFileServer)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if err := toPdf(wk, w, r); err != nil {
+		if err := toPdf(wk, c.WkVersion, w, r); err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
-	fmt.Println("listening on ", addr)
-	panic(http.ListenAndServe(addr, nil))
+	fmt.Println("listening on ", c.Listen)
+	panic(http.ListenAndServe(c.Listen, nil))
 }
 
-func toPdf(wk *wkhtml.ToX, w http.ResponseWriter, r *http.Request) error {
+func toPdf(wk *wkhtml.ToX, wkVersion string, w http.ResponseWriter, r *http.Request) error {
 	url := r.URL.Query().Get("url")
 	if len(url) == 0 {
 		return errors.New("no html found")
 	}
 
 	extra := r.URL.Query().Get("extra")
-	toPdf := switchVersion(wk, r.URL.Query().Get("v"))
+	toPdf := switchVersion(wk, wkVersion, r.URL.Query().Get("v"))
 	pdf, err := toPdf(url, extra)
 	if err != nil {
 		return err
@@ -59,7 +99,10 @@ func toPdf(wk *wkhtml.ToX, w http.ResponseWriter, r *http.Request) error {
 	return err
 }
 
-func switchVersion(wk *wkhtml.ToX, v string) func(htmlURL string, extraArgs string) (pdf []byte, err error) {
+func switchVersion(wk *wkhtml.ToX, wkVersion, v string) func(htmlURL string, extraArgs string) (pdf []byte, err error) {
+	if v == "" {
+		v = wkVersion
+	}
 	switch v {
 	default:
 		return wk.ToPdf

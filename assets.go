@@ -1,6 +1,11 @@
 package wkp
 
-import "embed"
+import (
+	"embed"
+	"io/fs"
+)
 
 //go:embed assets
-var Assets embed.FS
+var AssetsFS embed.FS
+
+var Assets, _ = fs.Sub(AssetsFS, "assets")
