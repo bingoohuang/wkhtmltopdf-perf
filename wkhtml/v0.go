@@ -2,10 +2,11 @@ package wkhtml
 
 import (
 	"errors"
-	"github.com/bingoohuang/wkp/pkg/util"
 	"log"
 	"strconv"
 	"time"
+
+	"github.com/bingoohuang/wkp/pkg/util"
 )
 
 type ToX struct {
@@ -53,8 +54,10 @@ type ExecOptions struct {
 	Timeout time.Duration
 }
 
-var ErrTimeout = errors.New("execute timeout")
-var ErrExecute = errors.New("execute error")
+var (
+	ErrTimeout = errors.New("execute timeout")
+	ErrExecute = errors.New("execute error")
+)
 
 func (o ExecOptions) Exec(data []byte, name string, args ...string) (result []byte, err error) {
 	item, err := o.NewV1pItem(name, args...)

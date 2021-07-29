@@ -1,18 +1,21 @@
 package wkhtml
 
 import (
-	"github.com/bingoohuang/wkp/pkg/mount"
-	"github.com/bingoohuang/wkp/pkg/util"
-	"github.com/bingoohuang/wkp/pkg/uuid"
 	"log"
 	"path/filepath"
 	"strconv"
 	"sync"
+
+	"github.com/bingoohuang/wkp/pkg/mount"
+	"github.com/bingoohuang/wkp/pkg/util"
+	"github.com/bingoohuang/wkp/pkg/uuid"
 )
 
-var registry *mount.FileRegistry
-var mountDir string
-var v2pOnce sync.Once
+var (
+	registry *mount.FileRegistry
+	mountDir string
+	v2pOnce  sync.Once
+)
 
 func InitMount() (*mount.FileRegistry, string) {
 	mntDir, err := util.TempDir()
@@ -22,15 +25,15 @@ func InitMount() (*mount.FileRegistry, string) {
 
 	log.Printf("start mount dir: %v", mntDir)
 
-	registry := mount.NewFileRegistry()
+	r := mount.NewFileRegistry()
 
 	go func() {
-		if err := mount.Mount(registry, mntDir); err != nil {
+		if err := mount.Mount(r, mntDir); err != nil {
 			log.Fatalf("failed to mount: %v", err)
 		}
 	}()
 
-	return registry, mntDir
+	return r, mntDir
 }
 
 func (p *ToX) ToPdfV2p(htmlURL, extraArgs string, saveFile bool) (pdf []byte, err error) {
@@ -46,9 +49,9 @@ func (p *ToX) ToPdfV2p(htmlURL, extraArgs string, saveFile bool) (pdf []byte, er
 		bytes := <-dataCh
 		if saveFile {
 			return []byte(out), nil
-		} else {
-			return bytes, nil
 		}
+
+		return bytes, nil
 	}
 
 	return nil, err
@@ -65,8 +68,8 @@ func (p *ToX) SendArgs(htmlURL, extraArgs, out string) error {
 	log.Printf("wk result: %s", result)
 	if err == ErrTimeout {
 		v2Pool.back(nil)
-		if err := wk.Kill("timeout"); err != nil {
-			log.Printf("failed to kill, error: %v", err)
+		if e := wk.Kill("timeout"); e != nil {
+			log.Printf("failed to kill, error: %v", e)
 		}
 	} else {
 		v2Pool.back(wk)

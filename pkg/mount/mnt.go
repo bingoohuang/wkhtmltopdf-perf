@@ -2,11 +2,12 @@ package mount
 
 import (
 	"context"
-	"github.com/seaweedfs/fuse"
-	"github.com/seaweedfs/fuse/fs"
 	"os"
 	"sync"
 	"syscall"
+
+	"github.com/seaweedfs/fuse"
+	"github.com/seaweedfs/fuse/fs"
 )
 
 type FS struct {
@@ -68,11 +69,7 @@ func Mount(fr *FileRegistry, mountpoint string) error {
 
 	// check if the mount process has an error to report
 	<-c.Ready
-	if err := c.MountError; err != nil {
-		return err
-	}
-
-	return nil
+	return c.MountError
 }
 
 type Dir struct {
@@ -80,7 +77,7 @@ type Dir struct {
 }
 
 func (d *Dir) Attr(ctx context.Context, a *fuse.Attr) error {
-	a.Mode = os.ModeDir | 0755
+	a.Mode = os.ModeDir | 0o755
 	return nil
 }
 
@@ -101,7 +98,7 @@ type File struct {
 }
 
 func (f *File) Attr(ctx context.Context, a *fuse.Attr) error {
-	a.Mode = 0644
+	a.Mode = 0o644
 	a.Size = uint64(len(f.data))
 	return nil
 }

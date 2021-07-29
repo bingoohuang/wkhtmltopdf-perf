@@ -1,10 +1,11 @@
 package wkhtml
 
 import (
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestExec(t *testing.T) {

@@ -2,12 +2,13 @@ package main
 
 import (
 	"bytes"
-	"github.com/gocolly/colly/v2"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"regexp"
+
+	"github.com/gocolly/colly/v2"
 )
 
 func main() {

@@ -1,9 +1,10 @@
 package wkhtml
 
 import (
-	"github.com/bingoohuang/wkp/pkg/util"
 	"log"
 	"time"
+
+	"github.com/bingoohuang/wkp/pkg/util"
 )
 
 func (p *ToX) ToPdfV1(url, extraArgs string, saveFile bool) (pdf []byte, err error) {

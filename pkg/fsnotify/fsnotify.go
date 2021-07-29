@@ -1,8 +1,9 @@
 package fsnotify
 
 import (
-	"github.com/fsnotify/fsnotify"
 	"log"
+
+	"github.com/fsnotify/fsnotify"
 )
 
 func Listen(path string) error {

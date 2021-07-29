@@ -6,11 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/ctl"
-	"github.com/bingoohuang/gg/pkg/flagparse"
-	"github.com/bingoohuang/golog"
-	"github.com/bingoohuang/wkp"
-	"github.com/bingoohuang/wkp/wkhtml"
 	"io"
 	"log"
 	"mime"
@@ -18,6 +13,12 @@ import (
 	"runtime"
 	"strconv"
 	"time"
+
+	"github.com/bingoohuang/gg/pkg/ctl"
+	"github.com/bingoohuang/gg/pkg/flagparse"
+	"github.com/bingoohuang/golog"
+	"github.com/bingoohuang/wkp"
+	"github.com/bingoohuang/wkp/wkhtml"
 )
 
 func (Config) VersionInfo() string {
@@ -80,10 +81,12 @@ type Resp struct {
 	Error string `json:"error"`
 }
 
+var ErrBadArgument = errors.New("argument is missing or in bad format")
+
 func toPdf(wk *wkhtml.ToX, wkVersion string, w http.ResponseWriter, r *http.Request) error {
 	url := r.URL.Query().Get("url")
 	if len(url) == 0 {
-		return errors.New("no html found")
+		return ErrBadArgument
 	}
 
 	extra := r.URL.Query().Get("extra")

@@ -1,15 +1,16 @@
 package fsnotify
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGoFsNotify(t *testing.T) {
 	err := Listen(".")
 	assert.Nil(t, err)
 
-	//select {}
+	// select {}
 }
 
 /*

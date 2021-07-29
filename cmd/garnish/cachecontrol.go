@@ -7,13 +7,17 @@ import (
 	"time"
 )
 
-const cacheControl = "Cache-Control"
-const ccNoCache = "no-cache"
-const ccNoStore = "no-store"
-const ccPrivate = "private"
+const (
+	cacheControl = "Cache-Control"
+	ccNoCache    = "no-cache"
+	ccNoStore    = "no-store"
+	ccPrivate    = "private"
+)
 
-var maxAgeReg = regexp.MustCompile(`max-age=(\d+)`)
-var sharedMaxAgeReg = regexp.MustCompile(`s-maxage=(\d+)`)
+var (
+	maxAgeReg       = regexp.MustCompile(`max-age=(\d+)`)
+	sharedMaxAgeReg = regexp.MustCompile(`s-maxage=(\d+)`)
+)
 
 func parseCacheControl(cc string) (cache bool, duration time.Duration) {
 	if cc == ccPrivate || cc == ccNoCache || cc == ccNoStore {

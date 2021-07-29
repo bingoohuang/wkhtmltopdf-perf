@@ -3,7 +3,6 @@ package wkhtml
 import (
 	"bytes"
 	"errors"
-	"github.com/bingoohuang/wkp/pkg/util"
 	"io"
 	"log"
 	"os/exec"
@@ -11,6 +10,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/bingoohuang/wkp/pkg/util"
 )
 
 var ErrSaveFileNotSupported = errors.New("save file not supported")
@@ -30,8 +31,10 @@ func (p *ToX) ToPdfV1p(url, _ string, saveFile bool) (pdf []byte, err error) {
 	return item.Exec(data)
 }
 
-var v1pPool *V1pPool
-var v1pOnce sync.Once
+var (
+	v1pPool *V1pPool
+	v1pOnce sync.Once
+)
 
 type V1pPool struct {
 	chn chan *V1pItem

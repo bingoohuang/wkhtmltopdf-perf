@@ -3,8 +3,6 @@ package wkhtml
 import (
 	"bufio"
 	"context"
-	"github.com/bingoohuang/wkp/pkg/util"
-	"go.uber.org/multierr"
 	"io"
 	"log"
 	"os"
@@ -14,6 +12,9 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
+
+	"github.com/bingoohuang/wkp/pkg/util"
+	"go.uber.org/multierr"
 )
 
 type V2Pool struct {
@@ -24,9 +25,7 @@ type V2Pool struct {
 
 func NewV2Pool(max int) *V2Pool {
 	options := ExecOptions{Timeout: 10 * time.Second}
-	p := &V2Pool{max: int32(max)}
-	p.ch = make(chan *V2Item, p.max)
-	p.wait = make(chan bool)
+	p := &V2Pool{max: int32(max), ch: make(chan *V2Item, max), wait: make(chan bool)}
 	go func() {
 		for {
 			<-p.wait
@@ -73,8 +72,10 @@ func (p *V2Pool) back(wk *V2Item) {
 	atomic.AddInt32(&p.num, -1)
 }
 
-var v2Pool *V2Pool
-var v2Once sync.Once
+var (
+	v2Pool *V2Pool
+	v2Once sync.Once
+)
 
 func (p *ToX) ToPdfV2(htmlURL, extraArgs string, saveFile bool) (pdf []byte, err error) {
 	v2Once.Do(func() { v2Pool = NewV2Pool(p.MaxPoolSize) })

@@ -2,17 +2,18 @@ package util
 
 import (
 	"fmt"
-	"github.com/bingoohuang/wkp/pkg/uuid"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/bingoohuang/wkp/pkg/uuid"
 )
 
 func GetContent(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("GET error: %v", err)
+		return nil, fmt.Errorf("GET error: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -57,7 +58,7 @@ func FileExist(name string) bool {
 }
 
 func ParseUploadFile(r *http.Request) (fn string, data []byte, err error) {
-	if err := r.ParseMultipartForm(16 /*16 MiB */ << 20); err != nil {
+	if err = r.ParseMultipartForm(16 /*16 MiB */ << 20); err != nil {
 		if err == http.ErrNotMultipart {
 			err = nil
 		}

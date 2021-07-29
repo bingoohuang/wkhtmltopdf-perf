@@ -39,8 +39,10 @@ func encodeHex(dst []byte, uuid UUID) {
 	hex.Encode(dst[24:], uuid[10:])
 }
 
-var rander = rand.Reader // random function
-var Nil UUID             // empty UUID, all zeros
+var (
+	rander = rand.Reader // random function
+	Nil    UUID          // empty UUID, all zeros
+)
 
 // A UUID is a 128 bit (16 byte) Universal Unique IDentifier as defined in RFC 4122.
 type UUID [16]byte
