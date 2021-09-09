@@ -22,16 +22,18 @@ import (
 )
 
 func (Config) VersionInfo() string {
-	return "wk(a go wrapper for wkhtmltopdf) v1.1.0 2021-07-28 14:10:14"
+	return "wk(a go wrapper for wkhtmltopdf) v1.1.1 2021-09-09 13:39:11"
 }
 
 func (c Config) Usage() string {
 	return fmt.Sprintf(`Usage of %s:
   -MaxPoolSize value 进程池大小(默认 %d)
-  -Listen value 只取前N个检查(默认 :9337)
-  -WkVersion value Wk包装版本号, 0/1/1p/2/2p（默认 2)
-  -EnableCacheDir 是否开启Wk的缓存目录（默认 false)
-  -v 打印版本号后退出`, c.VersionInfo(), runtime.NumCPU()*10)
+  -Listen      value 只取前N个检查(默认 :9337)
+  -WkVersion   value Wk包装版本号, 0/1/1p/2/2p（默认 2)
+  -EnableCacheDir    是否开启Wk的缓存目录（默认 false)
+  -v                 打印版本号后退出
+  --init             生成示例配置文件 wk.yml 和启停脚本 ctl (ctl start/stop/status/log/tail)
+`, c.VersionInfo(), runtime.NumCPU()*10)
 }
 
 type Config struct {

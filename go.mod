@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/PuerkitoBio/goquery v1.7.1 // indirect
 	github.com/antchfx/xmlquery v1.3.6 // indirect
-	github.com/bingoohuang/gg v0.0.0-20210728042831-75a8b93bbb04
+	github.com/bingoohuang/gg v0.0.0-20210908064758-c97837966884
 	github.com/bingoohuang/golog v0.0.0-20210727011701-2319aa8459ec
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/gocolly/colly/v2 v2.1.0
