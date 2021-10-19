@@ -26,8 +26,10 @@ wkhtmltopdf 0.12.6 (with patched qt)
 2| 预热 | 重用 | 网址 | Y |  `wk --read-args-from-stdin` | 209.262|26.457
 2p| 预热 | 重用 | 网址 | N (fuse) | `wk --read-args-from-stdin`|225.668|26.314
 
-1. 压测1: `gobench -l ":9337?url=http://127.0.0.1:9337/b.html&v={v}"`, v2/v2p 池大小100
-2. 1/1p时， 页面内链接未处理，对于有页面内css/js时，此项指标无意义
+1. 压测1: 简单只有文本的 HTML 页面 
+2. 压测2： 使用包含一个图片的 HTML 页面
+3. `gobench -l ":9337?url=http://127.0.0.1:9337/b.html&v={v}"`, v2/v2p 池大小100
+4. 1/1p时， 页面内链接未处理，对于有页面内css/js时，此项指标无意义
 
 ## Install
 

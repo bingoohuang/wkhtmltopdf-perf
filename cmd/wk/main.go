@@ -14,7 +14,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/bingoohuang/gg/pkg/ctl"
 	"github.com/bingoohuang/gg/pkg/flagparse"
 	"github.com/bingoohuang/golog"
 	"github.com/bingoohuang/wkp"
@@ -58,8 +57,7 @@ var initAssets embed.FS
 
 func main() {
 	c := &Config{}
-	flagparse.Parse(c, flagparse.AutoLoadYaml("c", "wk.yml"))
-	ctl.Config{Initing: c.Init, InitFiles: initAssets}.ProcessInit()
+	flagparse.Parse(c, flagparse.AutoLoadYaml("c", "wk.yml"), flagparse.ProcessInit(&initAssets))
 	golog.SetupLogrus()
 	log.Printf("config: %+v created", c)
 
