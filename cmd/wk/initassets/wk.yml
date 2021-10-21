@@ -6,3 +6,11 @@ Listen: ":9337"
 WkVersion: 2
 # EnableCacheDir 是否开启Wk的缓存目录（默认 false)
 EnableCacheDir: false
+
+# 以下三项，适用于 WkVersion 为 2 或 2p 的情况，用于判断转换是否成功
+OkItems:
+  - Done
+ErrItems:
+  - "Error:"
+IgnoreErrItems:
+  - "status code 404"

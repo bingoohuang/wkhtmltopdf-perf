@@ -12,6 +12,11 @@ import (
 type ToX struct {
 	MaxPoolSize int
 	CacheDir    bool
+
+	//  以下三项，适用于 WkVersion 为 2 或 2p 的情况，用于判断转换是否成功
+	OkItems        []string
+	ErrItems       []string
+	IgnoreErrItems []string
 }
 
 const wkhtmltopdf = "wkhtmltopdf"

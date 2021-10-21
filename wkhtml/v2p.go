@@ -37,7 +37,7 @@ func InitMount() (*mount.FileRegistry, string) {
 }
 
 func (p *ToX) ToPdfV2p(htmlURL, extraArgs string, saveFile bool) (pdf []byte, err error) {
-	v2Once.Do(func() { v2Pool = NewV2Pool(p.MaxPoolSize) })
+	v2Once.Do(func() { v2Pool = NewV2Pool(p) })
 	v2pOnce.Do(func() { registry, mountDir = InitMount() })
 
 	name := uuid.New().String() + ".pdf"
@@ -64,7 +64,7 @@ func (p *ToX) SendArgs(htmlURL, extraArgs, out string) error {
 	}
 
 	wk := v2Pool.borrow()
-	result, err := wk.Send(in, "Done", "Error:")
+	result, err := wk.Send(in)
 	log.Printf("wk result: %s", result)
 	if err == ErrTimeout {
 		v2Pool.back(nil)

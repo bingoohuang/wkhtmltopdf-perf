@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/bingoohuang/wkp/pkg/util"
 	"io"
 	"log"
 	"mime"
@@ -21,7 +22,7 @@ import (
 )
 
 func (Config) VersionInfo() string {
-	return "wk(a go wrapper for wkhtmltopdf) v1.1.1 2021-09-09 13:39:11"
+	return "wk(a go wrapper for wkhtmltopdf) v1.1.2 2021-10-21 17:54:44"
 }
 
 func (c Config) Usage() string {
@@ -44,6 +45,11 @@ type Config struct {
 	Listen         string `val:":9337"`
 	WkVersion      string `val:"2"`
 	EnableCacheDir bool
+
+	//  以下三项，适用于 WkVersion 为 2 或 2p 的情况，用于判断转换是否成功
+	OkItems        []string
+	ErrItems       []string
+	IgnoreErrItems []string
 }
 
 func (c *Config) PostProcess() {
@@ -61,7 +67,13 @@ func main() {
 	golog.SetupLogrus()
 	log.Printf("config: %+v created", c)
 
-	wk := &wkhtml.ToX{MaxPoolSize: c.MaxPoolSize, CacheDir: c.EnableCacheDir}
+	wk := &wkhtml.ToX{
+		MaxPoolSize:    c.MaxPoolSize,
+		CacheDir:       c.EnableCacheDir,
+		OkItems:        util.OrSlice(c.OkItems, []string{"Done"}),
+		ErrItems:       util.OrSlice(c.ErrItems, []string{"Error:"}),
+		IgnoreErrItems: util.OrSlice(c.IgnoreErrItems, []string{"status code 404"}),
+	}
 
 	assetFileServer := http.FileServer(http.FS(wkp.Assets))
 	http.Handle("/a.html", assetFileServer)

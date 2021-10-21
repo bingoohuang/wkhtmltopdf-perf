@@ -3,6 +3,7 @@ package wkhtml
 import (
 	"bufio"
 	"context"
+	"github.com/bingoohuang/gg/pkg/ss"
 	"io"
 	"log"
 	"os"
@@ -23,7 +24,8 @@ type V2Pool struct {
 	num, max int32
 }
 
-func NewV2Pool(max int) *V2Pool {
+func NewV2Pool(tox *ToX) *V2Pool {
+	max := tox.MaxPoolSize
 	options := ExecOptions{Timeout: 10 * time.Second}
 	p := &V2Pool{max: int32(max), ch: make(chan *V2Item, max), wait: make(chan bool)}
 	go func() {
@@ -33,7 +35,7 @@ func NewV2Pool(max int) *V2Pool {
 				continue // 生产已经达到上限
 			}
 
-			wk, err := options.NewV2Item(wkhtmltopdf, "--read-args-from-stdin")
+			wk, err := options.NewV2Item(tox, wkhtmltopdf, "--read-args-from-stdin")
 			if err != nil {
 				time.Sleep(1 * time.Second)
 				continue
@@ -78,7 +80,7 @@ var (
 )
 
 func (p *ToX) ToPdfV2(htmlURL, extraArgs string, saveFile bool) (pdf []byte, err error) {
-	v2Once.Do(func() { v2Pool = NewV2Pool(p.MaxPoolSize) })
+	v2Once.Do(func() { v2Pool = NewV2Pool(p) })
 	var out string
 	if out, err = util.TempFile(".pdf"); err != nil {
 		return
@@ -103,9 +105,10 @@ type V2Item struct {
 	cmd        *exec.Cmd
 	Timeout    time.Duration
 	StdoutPipe io.ReadCloser
+	Tox        *ToX
 }
 
-func (i *V2Item) Send(input string, okTerm, errTerm string) (string, error) {
+func (i *V2Item) Send(input string) (string, error) {
 	util.ClearChan(i.Out)
 	log.Printf("Send args: %s", input)
 	i.In <- input
@@ -119,10 +122,10 @@ func (i *V2Item) Send(input string, okTerm, errTerm string) (string, error) {
 			}
 			line = strings.TrimSpace(line)
 			out += line
-			if strings.Contains(line, okTerm) {
+			if ss.Contains(line, i.Tox.OkItems...) {
 				return out, nil
 			}
-			if strings.Contains(line, errTerm) {
+			if ss.Contains(line, i.Tox.ErrItems...) && !ss.Contains(line, i.Tox.IgnoreErrItems...) {
 				return out, ErrExecute
 			}
 		case <-time.After(i.Timeout):
@@ -139,8 +142,8 @@ func (i *V2Item) Kill(reason string) error {
 	return multierr.Combine(err1, err2, err3)
 }
 
-func (o ExecOptions) NewV2Item(name string, args ...string) (inOut *V2Item, err error) {
-	inOut = &V2Item{In: make(chan string), Out: make(chan string), Timeout: o.Timeout}
+func (o ExecOptions) NewV2Item(tox *ToX, name string, args ...string) (inOut *V2Item, err error) {
+	inOut = &V2Item{In: make(chan string), Out: make(chan string), Timeout: o.Timeout, Tox: tox}
 	cmd := exec.Command(name, args...)
 	inOut.cmd = cmd
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true, Pgid: 0}

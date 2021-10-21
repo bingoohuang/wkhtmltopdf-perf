@@ -10,6 +10,14 @@ import (
 	"github.com/bingoohuang/wkp/pkg/uuid"
 )
 
+func OrSlice(a, b []string) []string {
+	if len(a) > 0 {
+		return a
+	}
+
+	return b
+}
+
 func GetContent(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
