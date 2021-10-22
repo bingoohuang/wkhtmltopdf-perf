@@ -25,7 +25,7 @@ func (p *ToX) ToPdfV1p(url, _ string, saveFile bool) (pdf []byte, err error) {
 		return nil, err
 	}
 
-	v1pOnce.Do(func() { v1pPool = NewV1pPool() })
+	v1pOnce.Do(func() { v1pPool = NewV1pPool(p) })
 
 	item := v1pPool.borrow()
 	return item.Exec(data)
@@ -40,8 +40,8 @@ type V1pPool struct {
 	chn chan *V1pItem
 }
 
-func NewV1pPool() *V1pPool {
-	options := ExecOptions{Timeout: 10 * time.Second}
+func NewV1pPool(tox *ToX) *V1pPool {
+	options := ExecOptions{Timeout: tox.Timeout}
 	p := &V1pPool{}
 	p.chn = make(chan *V1pItem, runtime.NumCPU()*2)
 	go func() {

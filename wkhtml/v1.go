@@ -2,7 +2,6 @@ package wkhtml
 
 import (
 	"log"
-	"time"
 
 	"github.com/bingoohuang/wkp/pkg/util"
 )
@@ -27,7 +26,7 @@ func (p *ToX) ToPdfV1(url, extraArgs string, saveFile bool) (pdf []byte, err err
 		cmd += " --quiet - - | cat"
 	}
 	log.Printf("cmd: %s", cmd)
-	options := ExecOptions{Timeout: 10 * time.Second}
+	options := ExecOptions{Timeout: p.Timeout}
 	stdout, err := options.Exec(data, "sh", "-c", cmd)
 	if err != nil {
 		return nil, err

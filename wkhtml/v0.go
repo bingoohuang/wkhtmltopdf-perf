@@ -14,9 +14,8 @@ type ToX struct {
 	CacheDir    bool
 
 	//  以下三项，适用于 WkVersion 为 2 或 2p 的情况，用于判断转换是否成功
-	OkItems        []string
-	ErrItems       []string
-	IgnoreErrItems []string
+	OkItems []string
+	Timeout time.Duration
 }
 
 const wkhtmltopdf = "wkhtmltopdf"
@@ -34,7 +33,7 @@ func (p *ToX) ToPdfV0(url, extraArgs string, saveFile bool) (pdf []byte, err err
 		cmd += " - | cat"
 	}
 	log.Printf("cmd: %s", cmd)
-	options := ExecOptions{Timeout: 10 * time.Second}
+	options := ExecOptions{Timeout: p.Timeout}
 	output, err := options.Exec(nil, "sh", "-c", cmd)
 	if err != nil {
 		return nil, err

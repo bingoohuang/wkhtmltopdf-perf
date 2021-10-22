@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/bingoohuang/wkp/pkg/util"
 )
@@ -20,7 +19,7 @@ func (p *ToX) ToPdf(htmlURL, extraArgs string, saveFile bool) (pdf []byte, err e
 
 	cmd := wkhtmltopdf + " " + extraArgs + p.CacheDirArg() + " --quiet " + strconv.Quote(htmlURL) + " " + out
 	log.Printf("cmd: %s", cmd)
-	options := ExecOptions{Timeout: 10 * time.Second}
+	options := ExecOptions{Timeout: p.Timeout}
 	_, err = options.Exec(nil, "sh", "-c", cmd)
 	if err == nil {
 		if saveFile {

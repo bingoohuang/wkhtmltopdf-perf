@@ -10,7 +10,6 @@ EnableCacheDir: false
 # 以下三项，适用于 WkVersion 为 2 或 2p 的情况，用于判断转换是否成功
 OkItems:
   - Done
-ErrItems:
-  - "Error:"
-IgnoreErrItems:
-  - "status code 404"
+
+# 执行 wkhtmltopdf 命令超时时间，默认10s
+Timeout: 10s

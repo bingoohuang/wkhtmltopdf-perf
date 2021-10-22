@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/bingoohuang/wkp/pkg/util"
 	"io"
 	"log"
 	"mime"
@@ -14,6 +13,8 @@ import (
 	"runtime"
 	"strconv"
 	"time"
+
+	"github.com/bingoohuang/wkp/pkg/util"
 
 	"github.com/bingoohuang/gg/pkg/flagparse"
 	"github.com/bingoohuang/golog"
@@ -47,9 +48,10 @@ type Config struct {
 	EnableCacheDir bool
 
 	//  以下三项，适用于 WkVersion 为 2 或 2p 的情况，用于判断转换是否成功
-	OkItems        []string
-	ErrItems       []string
-	IgnoreErrItems []string
+	OkItems []string
+
+	// 执行超时时间
+	Timeout time.Duration
 }
 
 func (c *Config) PostProcess() {
@@ -68,11 +70,10 @@ func main() {
 	log.Printf("config: %+v created", c)
 
 	wk := &wkhtml.ToX{
-		MaxPoolSize:    c.MaxPoolSize,
-		CacheDir:       c.EnableCacheDir,
-		OkItems:        util.OrSlice(c.OkItems, []string{"Done"}),
-		ErrItems:       util.OrSlice(c.ErrItems, []string{"Error:"}),
-		IgnoreErrItems: util.OrSlice(c.IgnoreErrItems, []string{"status code 404"}),
+		MaxPoolSize: c.MaxPoolSize,
+		CacheDir:    c.EnableCacheDir,
+		OkItems:     util.OrSlice(c.OkItems, []string{"Done", "Exit with code"}),
+		Timeout:     util.OrDuration(c.Timeout, 10*time.Second),
 	}
 
 	assetFileServer := http.FileServer(http.FS(wkp.Assets))

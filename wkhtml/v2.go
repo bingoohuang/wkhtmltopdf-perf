@@ -3,7 +3,6 @@ package wkhtml
 import (
 	"bufio"
 	"context"
-	"github.com/bingoohuang/gg/pkg/ss"
 	"io"
 	"log"
 	"os"
@@ -13,6 +12,8 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
+
+	"github.com/bingoohuang/gg/pkg/ss"
 
 	"github.com/bingoohuang/wkp/pkg/util"
 	"go.uber.org/multierr"
@@ -26,7 +27,7 @@ type V2Pool struct {
 
 func NewV2Pool(tox *ToX) *V2Pool {
 	max := tox.MaxPoolSize
-	options := ExecOptions{Timeout: 10 * time.Second}
+	options := ExecOptions{Timeout: tox.Timeout}
 	p := &V2Pool{max: int32(max), ch: make(chan *V2Item, max), wait: make(chan bool)}
 	go func() {
 		for {
@@ -124,9 +125,6 @@ func (i *V2Item) Send(input string) (string, error) {
 			out += line
 			if ss.Contains(line, i.Tox.OkItems...) {
 				return out, nil
-			}
-			if ss.Contains(line, i.Tox.ErrItems...) && !ss.Contains(line, i.Tox.IgnoreErrItems...) {
-				return out, ErrExecute
 			}
 		case <-time.After(i.Timeout):
 			return out, ErrTimeout

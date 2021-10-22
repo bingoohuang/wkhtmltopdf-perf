@@ -6,9 +6,18 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/bingoohuang/wkp/pkg/uuid"
 )
+
+func OrDuration(a, b time.Duration) time.Duration {
+	if a == 0 {
+		return b
+	}
+
+	return a
+}
 
 func OrSlice(a, b []string) []string {
 	if len(a) > 0 {
