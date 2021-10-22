@@ -84,12 +84,13 @@ Error: Failed to load http://assets/x.html, with network status code 3 and http 
 Error: Failed loading page http://assets/x.html (sometimes it will work just to ignore this error with --load-error-handling ignore)
 ```
 
-## Resouces
+## Resources
 
-1. [wkhtmltox to provide high performance access to wkhtmltopdf and wkhtmltoimage from node.js](https://github.com/tcort/wkhtmltox)
-1. [blob One Year With Wkhtmltopdf: One Thousand Problems, One Thousand Solutions](https://blog.theodo.com/2016/12/wkhtmltopdf/)
+1. [An HTML to PDF conversion library written in Java via JNA, based on wkhtmltopdf](https://github.com/wooio/htmltopdf-java)
+2. [wkhtmltox to provide high performance access to wkhtmltopdf and wkhtmltoimage from node.js](https://github.com/tcort/wkhtmltox)
+3. [blob One Year With Wkhtmltopdf: One Thousand Problems, One Thousand Solutions](https://blog.theodo.com/2016/12/wkhtmltopdf/)
    > Wkhtmltopdf has dependencies. On Linux, I had to install zlib, fontconfig, freetype, and X11 libs
-1. 从标准输入获取参数
+4. 从标准输入获取参数
    > 如果需要对许多页面进行批量处理，并且感觉 `wkhtmltopdf` 开启比较慢，可以尝试使用 `--read-args-from-stdin` 参数。
    > wkhtmltopdf 命令会为 `--read-args-from-stdin` 参数发送过来的每一行进行一次单独命令调用。
    > 也就是说此参数每读取一行都会执行一次 wkhtmltopdf 命令。而最终执行的命令中的参数是命令行中参数与此参数读取的标准输入流中参数的结合。
