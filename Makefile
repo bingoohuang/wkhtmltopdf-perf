@@ -52,7 +52,7 @@ install: init
 	upx ${gobin}/${app}
 
 linux: init
-	GOOS=linux GOARCH=amd64 go install -trimpath -ldflags=${flags1}  cmd/wk/main.go
+	GOOS=linux GOARCH=amd64 go install -trimpath -ldflags=${flags1}  ./...
 	upx ${gobin}/linux_amd64/${app}
 linux-arm64: init
 	GOOS=linux GOARCH=arm64 go install -trimpath -ldflags=${flags1}  ./...
