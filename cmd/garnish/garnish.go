@@ -18,7 +18,7 @@ import (
 )
 
 func main() {
-	forceCacheTime := flag.Duration("force", 0, "force boltCache time")
+	forceCacheTime := flag.Duration("time", 0, "force cache time, like 1h,5m,50s")
 	cacheName := flag.String("cache", "", "default for memory cache, non-empty string use boltdb")
 	proxyHost := flag.String("proxy", "", "proxy target address, like http://192.168.1.1:8090")
 	port := flag.Int("port", 9338, "port")
@@ -41,10 +41,9 @@ func main() {
 }
 
 type garnish struct {
-	c              Cache
-	proxy          *httputil.ReverseProxy
-	forceCacheTime time.Duration
-	target         *url.URL
+	c        Cache
+	proxy    *httputil.ReverseProxy
+	duration time.Duration
 }
 
 func New(target *url.URL, cacheName string, forceCacheTime time.Duration) *garnish {
@@ -60,7 +59,7 @@ func New(target *url.URL, cacheName string, forceCacheTime time.Duration) *garni
 		cache = NewCache(cacheName)
 	}
 
-	return &garnish{c: cache, proxy: proxy, forceCacheTime: forceCacheTime, target: target}
+	return &garnish{c: cache, proxy: proxy, duration: forceCacheTime}
 }
 
 func (g *garnish) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -76,18 +75,20 @@ func (g *garnish) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	u := r.URL.String()
 
 	var page *Page
-	if c.Get(u, false, &page) {
+
+	forceRead := g.proxy == nil
+	if c.Get(u, forceRead, &page) {
 		loadCache(w, page)
 		return
 	}
 
 	w.Header().Set(xGarnishCache, "MISS")
-	pw := &responseWriter{proxied: w}
+	pw := &responseWriter{backend: w}
 	start := time.Now()
 	p.ServeHTTP(pw, r)
 	cost := time.Since(start)
 
-	saveCache(w, pw, cost, g.forceCacheTime, c, u)
+	saveCache(w, pw, cost, g.duration, c, u)
 }
 
 func saveCache(w http.ResponseWriter, pw *responseWriter, cost, forceCacheTime time.Duration, c Cache, urlAddr string) {
@@ -106,7 +107,7 @@ func saveCache(w http.ResponseWriter, pw *responseWriter, cost, forceCacheTime t
 		return
 	}
 
-	cc := w.Header().Get(cacheControl)
+	cc := w.Header().Get("Cache-Control")
 	if toCache, duration := parseCacheControl(cc); toCache {
 		c.Put(urlAddr, savePage, duration)
 	}
@@ -141,29 +142,22 @@ type Page struct {
 }
 
 type responseWriter struct {
-	proxied    http.ResponseWriter
+	backend    http.ResponseWriter
 	statusCode int
 	body       []byte
 }
 
-func (r *responseWriter) Header() http.Header { return r.proxied.Header() }
+func (r *responseWriter) Header() http.Header { return r.backend.Header() }
 
 func (r *responseWriter) Write(data []byte) (int, error) {
 	r.body = append(r.body, data...)
-	return r.proxied.Write(data)
+	return r.backend.Write(data)
 }
 
 func (r *responseWriter) WriteHeader(statusCode int) {
 	r.statusCode = statusCode
-	r.proxied.WriteHeader(statusCode)
+	r.backend.WriteHeader(statusCode)
 }
-
-const (
-	cacheControl = "Cache-Control"
-	ccNoCache    = "no-boltCache"
-	ccNoStore    = "no-store"
-	ccPrivate    = "private"
-)
 
 var (
 	maxAgeReg       = regexp.MustCompile(`max-age=(\d+)`)
@@ -171,7 +165,8 @@ var (
 )
 
 func parseCacheControl(cc string) (cache bool, duration time.Duration) {
-	if cc == ccPrivate || cc == ccNoCache || cc == ccNoStore {
+	switch cc {
+	case "private", "no-boltCache", "no-store":
 		return false, 0
 	}
 
@@ -261,9 +256,7 @@ func (c *boltCache) Put(key string, page *Page, timeout time.Duration) (err erro
 	})
 }
 
-func (c *boltCache) Close() error {
-	return c.db.Close()
-}
+func (c *boltCache) Close() error { return c.db.Close() }
 
 func (c *boltCache) Get(key string, force bool, page **Page) bool {
 	data, ok, err := c.GetBytes(key, force)
@@ -321,7 +314,7 @@ type data struct {
 	expires *time.Time
 }
 
-func (d *data) shouldBeCleared() bool {
+func (d *data) isExpired() bool {
 	if d.expires == nil {
 		return false
 	}
@@ -353,7 +346,7 @@ func (c *memCache) Get(key string, force bool, page **Page) bool {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	if d, ok := c.data[key]; ok {
-		if !force && d.shouldBeCleared() {
+		if !force && d.isExpired() {
 			return false
 		}
 

@@ -401,6 +401,7 @@ func NewLenChars(length int, chars []byte) string {
 		}
 	}
 }
+
 func BenchmarkUniuriNewLen(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		UniuriNewLen(n)
