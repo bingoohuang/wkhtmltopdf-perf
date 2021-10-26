@@ -20,21 +20,22 @@ import (
 func main() {
 	forceCacheTime := flag.Duration("time", 0, "force cache time, like 1h,5m,50s")
 	cacheName := flag.String("cache", "", "default for memory cache, non-empty string use boltdb")
-	proxyHost := flag.String("proxy", "", "proxy target address, like http://192.168.1.1:8090")
+	proxy := flag.String("proxy", "", "proxy target address, like http://192.168.1.1:8090")
 	port := flag.Int("port", 9338, "port")
 	flag.Parse()
 
 	var target *url.URL
 	var err error
 
-	if *proxyHost != "" {
-		if target, err = url.Parse(*proxyHost); err != nil {
+	if *proxy != "" {
+		if target, err = url.Parse(*proxy); err != nil {
 			panic(err)
 		}
 	}
 
 	http.Handle("/", New(target, *cacheName, *forceCacheTime))
 	addr := fmt.Sprintf(":%d", *port)
+	log.Printf("listening on %s\n", addr)
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		panic(err)
 	}
@@ -44,6 +45,7 @@ type garnish struct {
 	c        Cache
 	proxy    *httputil.ReverseProxy
 	duration time.Duration
+	target   *url.URL
 }
 
 func New(target *url.URL, cacheName string, forceCacheTime time.Duration) *garnish {
@@ -59,7 +61,7 @@ func New(target *url.URL, cacheName string, forceCacheTime time.Duration) *garni
 		cache = NewCache(cacheName)
 	}
 
-	return &garnish{c: cache, proxy: proxy, duration: forceCacheTime}
+	return &garnish{c: cache, proxy: proxy, duration: forceCacheTime, target: target}
 }
 
 func (g *garnish) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -82,6 +84,7 @@ func (g *garnish) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	r.Host = g.target.Host
 	w.Header().Set(xGarnishCache, "MISS")
 	pw := &responseWriter{backend: w}
 	start := time.Now()

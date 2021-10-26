@@ -9,10 +9,10 @@ The project was described in more details in [the article](https://developer20.c
 
 ## usage example
 
-1. `garnish -force 1h -proxy http://192.168.112.228:11009/ -cache g.db`
+1. `garnish -time 1h -proxy http://192.168.112.228:11009/ -cache g.db`
    force cache for an hour to target and use bolddb as cache store with name `g.db`. And `g.db` can be used separately
    like `garnish -cache g.db`.
-2. `garnish -force 1h -proxy http://192.168.112.228:11009/`
+2. `garnish -time 1h -proxy http://192.168.112.228:11009/`
    same with above other than with memory caching.
 3. `garnish -proxy http://192.168.112.228:11009/`
    cache in memory according to response header `Cache-Control`, like `Cache-Control: max-age=123`.
