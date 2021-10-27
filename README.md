@@ -5,8 +5,8 @@ performance prof for wkhtmltopdf.
 [wkhtmltopdf](https://github.com/wkhtmltopdf/wkhtmltopdf) converts HTML to PDF using Webkit (QtWebKit), which is the
 browser engine that is used to render HTML and javascript - Chrome uses that engine too.
 
-wkhtmltopdf 是一个开源的，使用 Qt WebKit 渲染引擎，把 html 转换为 pdf 文件的命令行工具。
-wkhtmltopdf 还有一个双胞胎兄弟 wkhtmltoimage，顾名思义，它可以把 html 转换为 image 图片。
+wkhtmltopdf 是一个开源的，使用 Qt WebKit 渲染引擎，把 html 转换为 pdf 文件的命令行工具。 wkhtmltopdf 还有一个双胞胎兄弟 wkhtmltoimage，顾名思义，它可以把 html 转换为
+image 图片。
 
 简单的讲，wkhtmltopdf 用于把网页转换成 pdf 文件。
 
@@ -25,8 +25,9 @@ wkhtmltopdf 0.12.6 (with patched qt)
 1p| 预热 | -| 内容 (stdin) | N（stdout) | `wk --quiet - - \| cat` | 71.630|54.223
 2| 预热 | 重用 | 网址 | Y |  `wk --read-args-from-stdin` | 209.262|26.457
 2p| 预热 | 重用 | 网址 | N (fuse) | `wk --read-args-from-stdin`|225.668|26.314
+3| - | 重用 | 网址 | - | cgo bindings | 废止 | 废止（重复调用挂掉）
 
-1. 压测1: 简单只有文本的 HTML 页面 
+1. 压测1: 简单只有文本的 HTML 页面
 2. 压测2： 使用包含一个图片的 HTML 页面
 3. `gobench -l ":9337?url=http://127.0.0.1:9337/b.html&v={v}"`, v2/v2p 池大小100
 4. 1/1p时， 页面内链接未处理，对于有页面内css/js时，此项指标无意义
